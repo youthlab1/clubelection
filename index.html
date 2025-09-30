@@ -491,31 +491,28 @@ function detectConflicts(){
   for(let i=0;i<clubsData.length;i++){
     for(let j=i+1;j<clubsData.length;j++){
       const A = clubsData[i], B = clubsData[j];
+      
       // payment vs payment
       if(A.paymentStart && A.paymentEnd && B.paymentStart && B.paymentEnd){
         const ov = getOverlapRange(A.paymentStart,A.paymentEnd,B.paymentStart,B.paymentEnd);
         if(ov.days>0) conflicts.push({type:'تسديد مع تسديد', club1:A.name, club2:B.name, start:ov.start, end:ov.end, days:ov.days});
       }
-      // elections vs payment (both directions)
-      ['election1','election2'].forEach(k=>{
-        if(A[k] && B.paymentStart && B.paymentEnd){
-          const ov = getOverlapRange(A[k],A[k],B.paymentStart,B.paymentEnd);
-          if(ov.days>0) conflicts.push({type:'انتخابات مع تسديد', club1:A.name, club2:B.name, start:ov.start, end:ov.end, days:ov.days});
-        }
-        if(B[k] && A.paymentStart && A.paymentEnd){
-          const ov = getOverlapRange(B[k],B[k],A.paymentStart,A.paymentEnd);
-          if(ov.days>0) conflicts.push({type:'انتخابات مع تسديد', club1:B.name, club2:A.name, start:ov.start, end:ov.end, days:ov.days});
-        }
-      });
-      // elections vs elections (all combos)
-      const aE = ['election1','election2'].filter(x=>A[x]);
-      const bE = ['election1','election2'].filter(x=>B[x]);
-      aE.forEach(ak=>{
-        bE.forEach(bk=>{
-          const ov = getOverlapRange(A[ak],A[ak],B[bk],B[bk]);
-          if(ov.days>0) conflicts.push({type:'انتخابات مع انتخابات', club1:A.name, club2:B.name, start:ov.start, end:ov.end, days:ov.days});
-        });
-      });
+      
+      // elections vs payment (الانتخابات الأولى فقط)
+      if(A.election1 && B.paymentStart && B.paymentEnd){
+        const ov = getOverlapRange(A.election1,A.election1,B.paymentStart,B.paymentEnd);
+        if(ov.days>0) conflicts.push({type:'انتخابات مع تسديد', club1:A.name, club2:B.name, start:ov.start, end:ov.end, days:ov.days});
+      }
+      if(B.election1 && A.paymentStart && A.paymentEnd){
+        const ov = getOverlapRange(B.election1,B.election1,A.paymentStart,A.paymentEnd);
+        if(ov.days>0) conflicts.push({type:'انتخابات مع تسديد', club1:B.name, club2:A.name, start:ov.start, end:ov.end, days:ov.days});
+      }
+      
+      // elections vs elections (الانتخابات الأولى فقط)
+      if(A.election1 && B.election1){
+        const ov = getOverlapRange(A.election1,A.election1,B.election1,B.election1);
+        if(ov.days>0) conflicts.push({type:'انتخابات مع انتخابات', club1:A.name, club2:B.name, start:ov.start, end:ov.end, days:ov.days});
+      }
     }
   }
   renderConflicts(conflicts);
