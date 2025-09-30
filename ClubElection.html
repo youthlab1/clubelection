@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تطبيق مواعيد انتخابات الأندية الرياضية</title>
+  <style>
+    :root {
+      --primary-color: #004080;
+      --secondary-color: #2c5282;
+      --success-color: #28a745;
+      --warning-color: #ffc107;
+      --danger-color: #dc3545;
+      --info-color: #17a2b8;
+      --light-color: #f8f9fa;
+      --dark-color: #343a40;
+      --border-color: #dee2e6;
+      --shadow: 0 2px 8px rgba(0,0,0,0.1);
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Tahoma", "Segoe UI", Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+
+    header {
+      background: var(--primary-color);
+      color: white;
+      padding: 1rem 0;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-color);
+      font-weight: bold;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin: 0;
+    }
+
+    .tabs {
+      display: flex;
+      background: white;
+      border-bottom: 2px solid var(--border-color);
+      margin-bottom: 1.5rem;
+      border-radius: 8px 8px 0 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tab {
+      padding: 1rem 1.5rem;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--dark-color);
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .tab:hover {
+      background: var(--light-color);
+    }
+
+    .tab.active {
+      color: var(--primary-color);
+      border-bottom: 3px solid var(--primary-color);
+      background: var(--light-color);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .controls {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5rem;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      width: 100%;
+    }
+
+    .select-add, .manual-add {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    select, input[type="text"], input[type="date"], input[type="time"] {
+      padding: 0.75rem;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 1rem;
+      width: 100%;
+      transition: var(--transition);
+      max-width: 100%;
+    }
+
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(0, 64, 128, 0.1);
+    }
+
+    .buttons-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.75rem;
+      margin-top: 1rem;
+      width: 100%;
+    }
+
+    button {
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      transition: var(--transition);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      min-height: 44px;
+      width: 100%;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    button.save { background: var(--success-color); color: white; }
+    button.edit { background: var(--warning-color); color: black; }
+    button.delete { background: var(--danger-color); color: white; }
+    button.export { background: var(--primary-color); color: white; }
+    button.add { background: var(--info-color); color: white; }
+    button.cancel { background: var(--dark-color); color: white; }
+    button.remove { background: #e53e3e; color: white; }
+    button.backup { background: var(--secondary-color); color: white; }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .table-container {
+      overflow-x: auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5rem;
+      width: 100%;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    th, td {
+      padding: 1rem;
+      text-align: center;
+      border: 1px solid var(--border-color);
+    }
+
+    th {
+      background: var(--primary-color);
+      color: white;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+
+    input[type="date"] {
+      max-width: 140px;
+      text-align: right;
+      direction: ltr;
+      font-family: inherit;
+    }
+
+    input[type="time"] {
+      max-width: 120px;
+      text-align: center;
+      direction: ltr;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.5);
+      cursor: pointer;
+    }
+
+    input[type="date"]::-webkit-datetime-edit {
+      direction: rtl;
+    }
+
+    input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+      direction: ltr;
+    }
+
+    input[type="date"]::-webkit-datetime-edit-year-field {
+      direction: ltr;
+    }
+
+    input[type="date"]::-webkit-datetime-edit-month-field {
+      direction: ltr;
+    }
+
+    input[type="date"]::-webkit-datetime-edit-day-field {
+      direction: ltr;
+    }
+
+    input[type="date"] {
+      text-align: right;
+    }
+
+    input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+    }
+
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: nowrap;
+    }
+
+    .action-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      font-size: 1.1rem;
+    }
+
+    .action-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .edit-btn {
+      background: var(--warning-color);
+      color: white;
+    }
+
+    .delete-btn {
+      background: var(--danger-color);
+      color: white;
+    }
+
+    .save-btn {
+      background: var(--success-color);
+      color: white;
+    }
+
+    .cancel-btn {
+      background: var(--dark-color);
+      color: white;
+    }
+
+    .conflicts {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .backup-section {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .backup-info {
+      background: #e6f7ff;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #91d5ff;
+      margin-bottom: 1.5rem;
+    }
+
+    .backup-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--primary-color);
+      margin-bottom: 0.5rem;
+    }
+
+    .backup-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    footer {
+      background: var(--primary-color);
+      color: white;
+      padding: 1.5rem 0;
+      margin-top: 2rem;
+      text-align: center;
+      width: 100%;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 15% auto;
+      padding: 2rem;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .conflicts-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .conflicts-table th {
+      background: var(--secondary-color);
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .conflicts-table td {
+      padding: 0.75rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .conflicts-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .conflicts-table tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+
+    .conflict-type {
+      font-weight: bold;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .conflict-type-election {
+      background: #e6fffa;
+      color: #234e52;
+    }
+
+    .conflict-type-payment {
+      background: #fffaf0;
+      color: #744210;
+    }
+
+    .conflict-type-mixed {
+      background: #e6f7ff;
+      color: #004080;
+    }
+
+    .conflict-days {
+      color: var(--danger-color);
+      font-weight: bold;
+      background: #fff5f5;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .conflict-clubs {
+      font-weight: 500;
+      color: var(--dark-color);
+    }
+
+    .conflict-dates {
+      color: var(--primary-color);
+      font-size: 0.9rem;
+    }
+
+    .conflict-icon {
+      font-size: 1.2rem;
+      margin-left: 0.5rem;
+    }
+
+    .no-conflicts {
+      text-align: center;
+      padding: 2rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      color: var(--dark-color);
+    }
+
+    .conflicts h2 {
+      margin-bottom: 1.5rem;
+      color: var(--primary-color);
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 0.5rem;
+    }
+
+    .conflict-note {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-right: 4px solid var(--info-color);
+      font-size: 0.9rem;
+    }
+
+    .auto-calculation-info {
+      background: #e6f7ff;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #91d5ff;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      background: white;
+      padding: 0.75rem;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .time-inputs {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .time-inputs span {
+      font-weight: bold;
+      color: var(--dark-color);
+    }
+
+    @media (min-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+      .control-group {
+        flex-direction: row;
+        align-items: end;
+      }
+      .select-add, .manual-add {
+        flex: 1;
+      }
+      .buttons-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+    }
+
+    @media (max-width: 767px) {
+      .header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+      }
+      
+      .tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+      }
+      
+      .tab {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        white-space: nowrap;
+      }
+      
+      th, td {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+      }
+      
+      input[type="date"] {
+        max-width: 120px;
+        font-size: 0.8rem;
+      }
+      
+      input[type="time"] {
+        max-width: 100px;
+        font-size: 0.8rem;
+      }
+      
+      .action-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+      }
+      
+      .modal-content {
+        margin: 30% auto;
+        padding: 1.5rem;
+      }
+      
+      .backup-stats {
+        grid-template-columns: 1fr;
+      }
+      
+      .table-container::-webkit-scrollbar {
+        height: 6px;
+      }
+      
+      .table-container::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 3px;
+      }
+      
+      .conflicts::-webkit-scrollbar {
+        height: 6px;
+      }
+      
+      .conflicts::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 3px;
+      }
+    }
+
+    html, body {
+      overflow-x: hidden;
+      width: 100%;
+    }
+
+    .table-container, .conflicts {
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary-color) var(--light-color);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <div class="logo-icon">⚽</div>
+          <h1>تطبيق مواعيد انتخابات الأندية الرياضية</h1>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="tabs">
+      <button class="tab active" data-tab="main-tab">🏠 الصفحة الرئيسية</button>
+      <button class="tab" data-tab="backup-tab">💾 صفحة النسخ احتياطي</button>
+    </div>
+
+    <div id="main-tab" class="tab-content active">
+      <section class="controls">
+        <div class="control-group">
+          <div class="select-add">
+            <label for="clubSelect">اختر نادي من القائمة:</label>
+            <select id="clubSelect">
+              <option value="">-- اختر نادي --</option>
+              <option>نادي جرش الرياضي</option>
+              <option>نادي الأقصى الرياضي</option>
+              <option>نادي كفرخل الرياضي</option>
+              <option>نادي ساكب الرياضي</option>
+              <option>نادي الكته الرياضي</option>
+              <option>نادي قفقفا الرياضي</option>
+              <option>نادي مرصع الرياضي</option>
+              <option>نادي شباب ريمون الرياضي</option>
+              <option>نادي شباب الفيحاء الرياضي</option>
+              <option>نادي غزة هاشم الرياضي</option>
+              <option>نادي اتحاد جرش الرياضي</option>
+              <option>نادي شباب مرصع الرياضي</option>
+              <option>نادي نحلة الرياضي</option>
+              <option>نادي جبة الرياضي</option>
+              <option>نادي شباب جبه الرياضي</option>
+              <option>نادي شباب المصطبة الرياضي</option>
+              <option>نادي شباب سوف الرياضي</option>
+              <option>نادي الرشايدة الرياضي</option>
+            </select>
+          </div>
+          
+          <div class="manual-add">
+            <label for="newClubName">إضافة نادي جديد:</label>
+            <input type="text" id="newClubName" placeholder="أدخل اسم النادي الجديد">
+          </div>
+        </div>
+
+        <div class="buttons-grid">
+          <button class="add" id="addFromSelectBtn">
+            <span>➕</span>
+            إضافة من القائمة
+          </button>
+          <button id="addNewClubBtn">
+            <span>⭐</span>
+            إضافة نادي جديد
+          </button>
+          <button class="remove" id="deleteFromDropdownBtn">
+            <span>🗑️</span>
+            حذف من القائمة
+          </button>
+          <button class="export" id="exportExcelBtn">
+            <span>📊</span>
+            تصدير ملف Excel
+          </button>
+        </div>
+      </section>
+
+      <div class="toggle-container">
+        <input type="checkbox" id="showElection2" checked>
+        <label for="showElection2">إظهار وإخفاء موعد الانتخابات الثاني</label>
+      </div>
+
+      <section class="table-container">
+        <table id="clubsTable">
+          <thead>
+            <tr>
+              <th>اسم النادي</th>
+              <th>موعد الانتخابات الأول</th>
+              <th id="election2Header">موعد الانتخابات الثاني</th>
+              <th>بداية التسديد</th>
+              <th>نهاية التسديد</th>
+              <th>الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section class="conflicts">
+        <h2>التعارضات المكتشفة</h2>
+        <div id="conflictsContainer"></div>
+      </section>
+    </div>
+
+    <div id="backup-tab" class="tab-content">
+      <section class="backup-section">
+        <h2>💾 نظام النسخ الاحتياطي</h2>
+        
+        <div class="backup-info">
+          <p>يمكنك حفظ واستعادة بياناتك لضمان عدم فقدانها عند تغيير الجهاز</p>
+        </div>
+
+        <div class="backup-stats">
+          <div class="stat-card">
+            <div class="stat-number" id="clubsCount">0</div>
+            <div>عدد الأندية</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="lastBackup">-</div>
+            <div>آخر نسخة احتياطية</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="dataSize">0 KB</div>
+            <div>حجم البيانات</div>
+          </div>
+        </div>
+
+        <div class="backup-buttons">
+          <button class="backup" id="exportBackupBtn">
+            <span>📤</span>
+            تصدير النسخة الاحتياطية
+          </button>
+          <button class="add" id="importBackupBtn">
+            <span>📥</span>
+            استيراد النسخة الاحتياطية
+          </button>
+          <button class="export" id="exportExcelBtn2">
+            <span>📊</span>
+            تصدير إلى Excel
+          </button>
+          <button class="delete" id="clearAllDataBtn">
+            <span>🗑️</span>
+            مسح جميع البيانات
+          </button>
+        </div>
+
+        <div class="backup-info" style="margin-top: 2rem;">
+          <h4>📋 تعليمات الاستخدام:</h4>
+          <ul style="text-align: right; margin-right: 1rem;">
+            <li>احفظ نسخة احتياطية قبل تغيير الجهاز</li>
+            <li>استورد النسخة الاحتياطية على الجهاز الجديد</li>
+            <li>البيانات محفوظة تلقائياً في متصفحك</li>
+            <li>استخدم Excel لطباعة التقارير</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="confirmationModal" class="modal">
+    <div class="modal-content">
+      <h3 id="modalTitle">تأكيد الحذف</h3>
+      <p id="modalMessage">هل أنت متأكد من أنك تريد حذف هذا النادي?</p>
+      <div class="modal-buttons">
+        <button class="cancel" id="cancelModalBtn">إلغاء</button>
+        <button class="delete" id="confirmModalBtn">تأكيد الحذف</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>| ©  تطبيق مواعيد انتخابات الأندية 2025| </p>
+         <p> Designed by Khaled Almoghrabi</p>
+          <p> مديرية شباب محافظة جرش</p>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script>
+    // البيانات والمتغيرات العامة
+    let clubsData = JSON.parse(localStorage.getItem('electionClubs')) || [];
+    let currentEditId = null;
+    let modalCallback = null;
+    let selectedClubForDeletion = null;
+    let showElection2 = true;
+
+    // تهيئة التطبيق عند تحميل الصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeEventListeners();
+      loadClubsData();
+      renderClubsTable();
+      updateBackupStats();
+      detectConflicts();
+      
+      // تهيئة حالة خيار إظهار موعد الانتخابات الثاني
+      const showElection2Checkbox = document.getElementById('showElection2');
+      showElection2Checkbox.checked = showElection2;
+      toggleElection2Visibility();
+    });
+
+    // تهيئة  الأحداث
+    function initializeEventListeners() {
+      // علامات التبويب
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+      });
+
+      // الأزرار الرئيسية
+      document.getElementById('addFromSelectBtn').addEventListener('click', addClubFromSelect);
+      document.getElementById('addNewClubBtn').addEventListener('click', addNewClub);
+      document.getElementById('deleteFromDropdownBtn').addEventListener('click', deleteFromDropdown);
+      document.getElementById('exportExcelBtn').addEventListener('click', exportExcel);
+      document.getElementById('exportExcelBtn2').addEventListener('click', exportExcel);
+
+      // أزرار النسخ احتياطي
+      document.getElementById('exportBackupBtn').addEventListener('click', exportBackup);
+      document.getElementById('importBackupBtn').addEventListener('click', importBackup);
+      document.getElementById('clearAllDataBtn').addEventListener('click', clearAllData);
+
+      // نافذة التأكيد
+      document.getElementById('cancelModalBtn').addEventListener('click', () => closeModal(false));
+      document.getElementById('confirmModalBtn').addEventListener('click', () => closeModal(true));
+
+      // خيار إظهار/إخفاء الانتخابات الثانية
+      document.getElementById('showElection2').addEventListener('change', function() {
+        showElection2 = this.checked;
+        toggleElection2Visibility();
+      });
+
+      // إغلاق النافذة المنبثقة عند النقر خارجها
+      window.addEventListener('click', function(event) {
+        const modal = document.getElementById('confirmationModal');
+        if (event.target === modal) {
+          closeModal(false);
+        }
+      });
+
+      // استخدام event delegation للأزرار الديناميكية
+      document.getElementById('clubsTable').addEventListener('click', function(e) {
+        const target = e.target;
+        const button = target.closest('button');
+        
+        if (!button) return;
+        
+        const id = button.dataset.id ? parseInt(button.dataset.id) : null;
+        
+        if (button.classList.contains('edit-btn')) {
+          editClub(id);
+        } else if (button.classList.contains('delete-btn')) {
+          deleteClub(id);
+        } else if (button.classList.contains('save-btn')) {
+          saveClub(id);
+        } else if (button.classList.contains('cancel-btn')) {
+          cancelEdit(id);
+        }
+      });
+    }
+
+    // تحويل بين التواريخ والنصوص
+    function formatDate(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('ar-EG');
+    }
+
+    // تحويل الوقت إلى صيغة 12 ساعة
+    function formatTimeTo12H(timeString) {
+      if (!timeString) return '';
+      
+      const [hours, minutes] = timeString.split(':');
+      const h = parseInt(hours);
+      const ampm = h >= 12 ? 'م' : 'ص';
+      const formattedHours = h % 12 || 12;
+      
+      return `${formattedHours}:${minutes} ${ampm}`;
+    }
+
+    // إضافة أيام إلى تاريخ
+    function addDays(date, days) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + days);
+      return result;
+    }
+
+    // تنسيق التاريخ إلى صيغة YYYY-MM-DD
+    function formatDateForInput(date) {
+      if (!date) return '';
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    // حساب الفرق بين تاريخين بالأيام
+    function daysBetween(date1, date2) {
+      const oneDay = 24 * 60 * 60 * 1000;
+      const firstDate = new Date(date1);
+      const secondDate = new Date(date2);
+      return Math.round(Math.abs((firstDate - secondDate) / oneDay));
+    }
+
+    // حساب أيام التداخل بين فترتين
+    function calculateOverlapDays(start1, end1, start2, end2) {
+      if (!start1 || !end1 || !start2 || !end2) return 0;
+      
+      const startDate1 = new Date(start1);
+      const endDate1 = new Date(end1);
+      const startDate2 = new Date(start2);
+      const endDate2 = new Date(end2);
+      
+      if (startDate1 > endDate1 || startDate2 > endDate2) return 0;
+      
+      const latestStart = new Date(Math.max(startDate1.getTime(), startDate2.getTime()));
+      const earliestEnd = new Date(Math.min(endDate1.getTime(), endDate2.getTime()));
+      
+      const overlapTime = earliestEnd.getTime() - latestStart.getTime();
+      if (overlapTime <= 0) return 0;
+      
+      return Math.ceil(overlapTime / (1000 * 60 * 60 * 24));
+    }
+
+    // حساب التواريخ تلقائياً بناءً على تاريخ موعد الانتخابات الأول
+    function calculateDatesAutomatically(election1Date) {
+      if (!election1Date) return {};
+      
+      const election1 = new Date(election1Date);
+      
+      // موعد الانتخابات الثاني بعد 14 يوم
+      const election2 = addDays(election1, 14);
+      
+      return {
+        election2: formatDateForInput(election2)
+      };
+    }
+
+    // حساب نهاية التسديد بناءً على بداية التسديد (10 أيام)
+    function calculatePaymentEnd(paymentStartDate) {
+      if (!paymentStartDate) return '';
+      
+      const paymentStart = new Date(paymentStartDate);
+      
+      // نهاية التسديد بعد 9 أيام من البداية (ليصبح المجموع 10 أيام)
+      const paymentEnd = addDays(paymentStart, 9);
+      
+      return formatDateForInput(paymentEnd);
+    }
+
+    // إظهار/إخفاء الانتخابات الثانية
+    function toggleElection2Visibility() {
+      const election2Header = document.getElementById('election2Header');
+      const election2Cells = document.querySelectorAll('.election2-cell');
+      
+      if (showElection2) {
+        election2Header.style.display = 'table-cell';
+        election2Cells.forEach(cell => cell.style.display = 'table-cell');
+      } else {
+        election2Header.style.display = 'none';
+        election2Cells.forEach(cell => cell.style.display = 'none');
+      }
+    }
+
+    // إدارة علامات التبويب
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      
+      document.getElementById(tabId).classList.add('active');
+      document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+      
+      if (tabId === 'main-tab') {
+        renderClubsTable();
+        detectConflicts();
+      } else if (tabId === 'backup-tab') {
+        updateBackupStats();
+      }
+    }
+
+    // إضافة نادي من القائمة المنسدلة
+    function addClubFromSelect() {
+      const clubSelect = document.getElementById('clubSelect');
+      const selectedClub = clubSelect.value;
+      
+      if (!selectedClub) {
+        alert('يرجى اختيار نادي من القائمة');
+        return;
+      }
+      
+      if (clubsData.some(club => club.name === selectedClub)) {
+        alert('هذا النادي مضاف مسبقاً');
+        return;
+      }
+      
+      const newClub = {
+        id: Date.now(),
+        name: selectedClub,
+        election1: '',
+        election1Time: '09:00',
+        election2: '',
+        election2Time: '09:00',
+        paymentStart: '',
+        paymentStartTime: '08:00',
+        paymentEnd: '',
+        paymentEndTime: '16:00'
+      };
+      
+      clubsData.push(newClub);
+      saveClubsData();
+      renderClubsTable();
+      detectConflicts();
+      
+      clubSelect.value = '';
+    }
+
+    // إضافة نادي جديد يدوياً
+    function addNewClub() {
+      const newClubNameInput = document.getElementById('newClubName');
+      const newClubName = newClubNameInput.value.trim();
+      
+      if (!newClubName) {
+        alert('يرجى إدخال اسم النادي');
+        return;
+      }
+      
+      if (clubsData.some(club => club.name === newClubName)) {
+        alert('هذا النادي مضاف مسبقاً');
+        newClubNameInput.value = '';
+        return;
+      }
+      
+      const newClub = {
+        id: Date.now(),
+        name: newClubName,
+        election1: '',
+        election1Time: '09:00',
+        election2: '',
+        election2Time: '09:00',
+        paymentStart: '',
+        paymentStartTime: '08:00',
+        paymentEnd: '',
+        paymentEndTime: '16:00'
+      };
+      
+      clubsData.push(newClub);
+      saveClubsData();
+      renderClubsTable();
+      detectConflicts();
+      
+      const clubSelect = document.getElementById('clubSelect');
+      const option = document.createElement('option');
+      option.value = newClubName;
+      option.textContent = newClubName;
+      clubSelect.appendChild(option);
+      
+      newClubNameInput.value = '';
+    }
+
+    // حذف نادي من القائمة المنسدلة
+    function deleteFromDropdown() {
+      const clubSelect = document.getElementById('clubSelect');
+      const selectedClub = clubSelect.value;
+      
+      if (!selectedClub) {
+        alert('يرجى اختيار نادي من القائمة');
+        return;
+      }
+      
+      selectedClubForDeletion = selectedClub;
+      showModal('حذف نادي', `هل أنت متأكد من أنك تريد حذف "${selectedClub}" من القائمة؟`, function(confirmed) {
+        if (confirmed) {
+          // إزالة النادي من القائمة المنسدلة فقط
+          for (let i = 0; i < clubSelect.options.length; i++) {
+            if (clubSelect.options[i].value === selectedClubForDeletion) {
+              clubSelect.remove(i);
+              break;
+            }
+          }
+          
+          clubSelect.value = '';
+          selectedClubForDeletion = null;
+        }
+      });
+    }
+
+    // عرض الجدول الرئيسي للأندية
+    function renderClubsTable() {
+      const tableBody = document.querySelector('#clubsTable tbody');
+      tableBody.innerHTML = '';
+      
+      if (clubsData.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = `<td colspan="6" style="text-align: center; padding: 20px;">لا توجد أندية مضافة بعد</td>`;
+        tableBody.appendChild(emptyRow);
+        return;
+      }
+      
+      clubsData.forEach(club => {
+        const row = document.createElement('tr');
+        
+        if (club.id === currentEditId) {
+          // وضع التحرير
+          row.innerHTML = `
+            <td>${club.name}</td>
+            <td>
+              <input type="date" id="edit-election1-${club.id}" value="${club.election1 || ''}" 
+                     onchange="updateCalculatedDates(${club.id})">
+              <div class="time-inputs">
+                <span>الساعة:</span>
+                <input type="time" id="edit-election1Time-${club.id}" value="${club.election1Time || '09:00'}">
+              </div>
+            </td>
+            <td class="election2-cell">
+              <input type="date" id="edit-election2-${club.id}" value="${club.election2 || ''}">
+              <div class="time-inputs">
+                <span>الساعة:</span>
+                <input type="time" id="edit-election2Time-${club.id}" value="${club.election2Time || '09:00'}">
+              </div>
+            </td>
+            <td>
+              <input type="date" id="edit-paymentStart-${club.id}" value="${club.paymentStart || ''}" 
+                     onchange="updatePaymentEndDate(${club.id})">
+              <div class="time-inputs">
+                <span>من:</span>
+                <input type="time" id="edit-paymentStartTime-${club.id}" value="${club.paymentStartTime || '08:00'}">
+              </div>
+            </td>
+            <td>
+              <input type="date" id="edit-paymentEnd-${club.id}" value="${club.paymentEnd || ''}">
+              <div class="time-inputs">
+                <span>إلى:</span>
+                <input type="time" id="edit-paymentEndTime-${club.id}" value="${club.paymentEndTime || '16:00'}">
+              </div>
+            </td>
+            <td class="action-buttons">
+              <button class="action-btn save-btn" data-id="${club.id}">💾</button>
+              <button class="action-btn cancel-btn" data-id="${club.id}">❌</button>
+            </td>
+          `;
+        } else {
+          // وضع العرض العادي
+          const election1Display = club.election1 ? 
+            `${formatDate(club.election1)}<br>${formatTimeTo12H(club.election1Time)}` : '';
+          
+          const election2Display = club.election2 ? 
+            `${formatDate(club.election2)}<br>${formatTimeTo12H(club.election2Time)}` : '';
+          
+          const paymentStartDisplay = club.paymentStart ? 
+            `${formatDate(club.paymentStart)}<br>${formatTimeTo12H(club.paymentStartTime)}` : '';
+          
+          const paymentEndDisplay = club.paymentEnd ? 
+            `${formatDate(club.paymentEnd)}<br>${formatTimeTo12H(club.paymentEndTime)}` : '';
+          
+          row.innerHTML = `
+            <td>${club.name}</td>
+            <td>${election1Display}</td>
+            <td class="election2-cell">${election2Display}</td>
+            <td>${paymentStartDisplay}</td>
+            <td>${paymentEndDisplay}</td>
+            <td class="action-buttons">
+              <button class="action-btn edit-btn" data-id="${club.id}">✏️</button>
+              <button class="action-btn delete-btn" data-id="${club.id}">🗑️</button>
+            </td>
+          `;
+        }
+        
+        tableBody.appendChild(row);
+      });
+      
+      toggleElection2Visibility();
+    }
+
+    // تحديث التواريخ المحسوبة تلقائيا
+    function updateCalculatedDates(id) {
+      const election1Input = document.getElementById(`edit-election1-${id}`);
+      const election2Input = document.getElementById(`edit-election2-${id}`);
+      
+      if (election1Input && election1Input.value) {
+        const calculatedDates = calculateDatesAutomatically(election1Input.value);
+        
+        if (election2Input && (!election2Input.value || election2Input.value === calculatedDates.election2)) {
+          election2Input.value = calculatedDates.election2;
+        }
+      }
+    }
+
+    // تحديث نهاية التسديد بناء على بداية التسديد
+    function updatePaymentEndDate(id) {
+      const paymentStartInput = document.getElementById(`edit-paymentStart-${id}`);
+      const paymentEndInput = document.getElementById(`edit-paymentEnd-${id}`);
+      
+      if (paymentStartInput && paymentStartInput.value) {
+        const paymentEnd = calculatePaymentEnd(paymentStartInput.value);
+        
+        if (paymentEndInput && (!paymentEndInput.value || paymentEndInput.value === paymentEnd)) {
+          paymentEndInput.value = paymentEnd;
+        }
+      }
+    }
+
+    // تحرير نادي
+    function editClub(id) {
+      const club = clubsData.find(c => c.id === id);
+      if (!club) return;
+      
+      // إلغاء أي تحرير سابق
+      if (currentEditId) {
+        cancelEdit(currentEditId);
+      }
+      
+      currentEditId = id;
+      renderClubsTable();
+    }
+
+    // حفظ التعديلات على النادي
+    function saveClub(id) {
+      const clubIndex = clubsData.findIndex(c => c.id === id);
+      if (clubIndex === -1) return;
+      
+      const election1 = document.getElementById(`edit-election1-${id}`).value;
+      const election1Time = document.getElementById(`edit-election1Time-${id}`).value;
+      const election2 = document.getElementById(`edit-election2-${id}`).value;
+      const election2Time = document.getElementById(`edit-election2Time-${id}`).value;
+      const paymentStart = document.getElementById(`edit-paymentStart-${id}`).value;
+      const paymentStartTime = document.getElementById(`edit-paymentStartTime-${id}`).value;
+      const paymentEnd = document.getElementById(`edit-paymentEnd-${id}`).value;
+      const paymentEndTime = document.getElementById(`edit-paymentEndTime-${id}`).value;
+      
+      if (paymentStart && paymentEnd && new Date(paymentStart) > new Date(paymentEnd)) {
+        alert('تاريخ بداية التسديد يجب أن يكون قبل تاريخ نهاية التسديد');
+        return;
+      }
+      
+      clubsData[clubIndex] = {
+        ...clubsData[clubIndex],
+        election1,
+        election1Time,
+        election2,
+        election2Time,
+        paymentStart,
+        paymentStartTime,
+        paymentEnd,
+        paymentEndTime
+      };
+      
+      saveClubsData();
+      currentEditId = null;
+      renderClubsTable();
+      detectConflicts();
+    }
+
+    // إلغاء التعديل
+    function cancelEdit(id) {
+      currentEditId = null;
+      renderClubsTable();
+    }
+
+    // حذف نادي
+    function deleteClub(id) {
+      const club = clubsData.find(c => c.id === id);
+      if (!club) return;
+      
+      showModal('حذف نادي', `هل أنت متأكد من أنك تريد حذف "${club.name}"؟`, function(confirmed) {
+        if (confirmed) {
+          clubsData = clubsData.filter(c => c.id !== id);
+          saveClubsData();
+          renderClubsTable();
+          detectConflicts();
+        }
+      });
+    }
+
+    // اكتشاف التعارضات بين مواعيد الانتخابات والتسديد وعرضها في جدول
+    function detectConflicts() {
+      const conflictsContainer = document.getElementById('conflictsContainer');
+      conflictsContainer.innerHTML = '';
+      
+      if (clubsData.length === 0) {
+        conflictsContainer.innerHTML = '<div class="no-conflicts">لا توجد تعارضات - لا توجد أندية مضافة</div>';
+        return;
+      }
+      
+      let allConflicts = [];
+      
+      // 1. اكتشاف تعارضات الانتخابات مع الانتخابات (الانتخابات الأولى فقط)
+      const electionConflicts = findElectionConflicts();
+      if (electionConflicts.length > 0) {
+        allConflicts = allConflicts.concat(electionConflicts);
+      }
+      
+      // 2. اكتشاف تعارضات الانتخابات مع فترات التسديد (الانتخابات الأولى فقط)
+      const electionPaymentConflicts = findElectionPaymentConflicts();
+      if (electionPaymentConflicts.length > 0) {
+        allConflicts = allConflicts.concat(electionPaymentConflicts);
+      }
+      
+      // 3. اكتشاف تعارضات فترات التسديد مع بعضها
+      const paymentConflicts = findPaymentConflicts();
+      if (paymentConflicts.length > 0) {
+        allConflicts = allConflicts.concat(paymentConflicts);
+      }
+      
+      if (allConflicts.length === 0) {
+        conflictsContainer.innerHTML = '<div class="no-conflicts">لا توجد تعارضات في المواعيد</div>';
+        return;
+      }
+      
+      // إنشاء جدول التعارضات
+      const conflictsTable = document.createElement('table');
+      conflictsTable.className = 'conflicts-table';
+      
+      // رأس الجدول
+      conflictsTable.innerHTML = `
+        <thead>
+          <tr>
+            <th>نوع التعارض</th>
+            <th>الأندية المتعارضة</th>
+            <th>فترة التعارض</th>
+            <th>أيام التداخل</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${allConflicts.map(conflict => {
+            let typeClass = '';
+            let typeText = '';
+            let clubsText = '';
+            let dateText = '';
+            let icon = '';
+            
+            if (conflict.type === 'انتخابات-انتخابات') {
+              typeClass = 'conflict-type-election';
+              typeText = 'انتخابات مع انتخابات';
+              clubsText = `${conflict.club1} ⚔️ ${conflict.club2}`;
+              dateText = `${formatDate(conflict.date1)}`;
+              icon = '📅';
+            } else if (conflict.type === 'انتخابات-تسديد') {
+              typeClass = 'conflict-type-mixed';
+              typeText = 'انتخابات مع تسديد';
+              clubsText = `${conflict.club1} ⚔️ ${conflict.club2}`;
+              dateText = `${formatDate(conflict.date)}`;
+              icon = '⏰';
+            } else if (conflict.type === 'تسديد-تسديد') {
+              typeClass = 'conflict-type-payment';
+              typeText = 'تسديد مع تسديد';
+              clubsText = `${conflict.club1} ⚔️ ${conflict.club2}`;
+              dateText = `${formatDate(conflict.startDate1)} - ${formatDate(conflict.endDate1)}`;
+              icon = '🔄';
+            }
+            
+            return `
+              <tr>
+                <td><span class="conflict-type ${typeClass}">${icon} ${typeText}</span></td>
+                <td>${clubsText}</td>
+                <td>${dateText}</td>
+                <td><span class="conflict-days">${conflict.overlapDays} أيام</span></td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      `;
+      
+      conflictsContainer.appendChild(conflictsTable);
+      
+      // إضافة ملاحظة 
+      const conflictNote = document.createElement('div');
+      conflictNote.className = 'conflict-note';
+      conflictNote.innerHTML = `
+        <strong>ملاحظة:</strong> 
+        التعارضات تشمل تداخل تاريخ موعد  الانتخابات وموعد فترات التسديد المختلفة. 
+        يرجى مراجعة المواعيد وتعديلها لتجنب التعارضات.
+      `;
+      conflictsContainer.appendChild(conflictNote);
+      
+      // إضافة إحصائية بعدد التعارضات
+      const totalElement = document.createElement('div');
+      totalElement.className = 'conflict-total';
+      totalElement.innerHTML = `
+        <strong>إجمالي التعارضات المكتشفة: ${allConflicts.length}</strong>
+      `;
+      conflictsContainer.appendChild(totalElement);
+    }
+
+    // البحث عن تعارضات مواعيد الانتخابات مع الانتخابات (الانتخابات الأولى فقط)
+    function findElectionConflicts() {
+      const conflicts = [];
+      const dateMap = {};
+      
+      // تجميع الانتخابات حسب التاريخ (الانتخابات الأولى فقط)
+      clubsData.forEach(club => {
+        if (club.election1) {
+          if (!dateMap[club.election1]) dateMap[club.election1] = [];
+          dateMap[club.election1].push({club: club.name, type: 'election1'});
+        }
+        // تم إزالة جمع الانتخابات الثانية
+      });
+      
+      // البحث عن التواريخ التي بها أكثر من نادي
+      for (const [date, clubs] of Object.entries(dateMap)) {
+        if (clubs.length > 1) {
+          // إنشاء تعارضات بين كل ناديين في نفس التاريخ
+          for (let i = 0; i < clubs.length; i++) {
+            for (let j = i + 1; j < clubs.length; j++) {
+              conflicts.push({
+                type: 'انتخابات-انتخابات',
+                club1: clubs[i].club,
+                date1: date,
+                club2: clubs[j].club,
+                date2: date,
+                overlapDays: 1
+              });
+            }
+          }
+        }
+      }
+      
+      return conflicts;
+    }
+
+    // البحث عن تعارضات الانتخابات مع فترات التسديد (الانتخابات الأولى فقط)
+    function findElectionPaymentConflicts() {
+      const conflicts = [];
+      
+      for (let i = 0; i < clubsData.length; i++) {
+        const club1 = clubsData[i];
+        
+        // التحقق من تعارض موعد الانتخابات الأول مع فترات التسديد فقط
+        if (club1.election1) {
+          for (let j = 0; j < clubsData.length; j++) {
+            const club2 = clubsData[j];
+            if (club2.paymentStart && club2.paymentEnd) {
+              const electionDate = new Date(club1.election1);
+              const paymentStart = new Date(club2.paymentStart);
+              const paymentEnd = new Date(club2.paymentEnd);
+              
+              // التحقق إذا كان تاريخ موعد الانتخابات يقع ضمن فترة التسديد
+              if (electionDate >= paymentStart && electionDate <= paymentEnd) {
+                const overlapDays = 1;
+                
+                conflicts.push({
+                  type: 'انتخابات-تسديد',
+                  club1: club1.name,
+                  date: club1.election1,
+                  club2: club2.name,
+                  paymentStart: club2.paymentStart,
+                  paymentEnd: club2.paymentEnd,
+                  overlapDays: overlapDays
+                });
+              }
+            }
+          }
+        }
+        
+        // تم إزالة التحقق من تعارض موعد الانتخابات الثاني مع فترات التسديد
+      }
+      
+      return conflicts;
+    }
+
+    // البحث عن تعارضات فترات التسديد مع بعضها
+    function findPaymentConflicts() {
+      const conflicts = [];
+      
+      for (let i = 0; i < clubsData.length; i++) {
+        const club1 = clubsData[i];
+        
+        if (club1.paymentStart && club1.paymentEnd) {
+          for (let j = i + 1; j < clubsData.length; j++) {
+            const club2 = clubsData[j];
+            
+            if (club2.paymentStart && club2.paymentEnd) {
+              const overlapDays = calculateOverlapDays(
+                club1.paymentStart, club1.paymentEnd,
+                club2.paymentStart, club2.paymentEnd
+              );
+              
+              if (overlapDays > 0) {
+                conflicts.push({
+                  type: 'تسديد-تسديد',
+                  club1: club1.name,
+                  startDate1: club1.paymentStart,
+                  endDate1: club1.paymentEnd,
+                  club2: club2.name,
+                  startDate2: club2.paymentStart,
+                  endDate2: club2.paymentEnd,
+                  overlapDays: overlapDays
+                });
+              }
+            }
+          }
+        }
+      }
+      
+      return conflicts;
+    }
+
+    // حفظ البيانات في localStorage
+    function saveClubsData() {
+      localStorage.setItem('electionClubs', JSON.stringify(clubsData));
+      localStorage.setItem('lastBackupDate', new Date().toISOString());
+      updateBackupStats();
+    }
+
+    // تحميل البيانات من localStorage
+    function loadClubsData() {
+      const savedData = localStorage.getItem('electionClubs');
+      if (savedData) {
+        clubsData = JSON.parse(savedData);
+        
+        // تهيئة القيم الافتراضية للوقت إذا لم تكن موجودة
+        clubsData.forEach(club => {
+          if (!club.election1Time) club.election1Time = '09:00';
+          if (!club.election2Time) club.election2Time = '09:00';
+          if (!club.paymentStartTime) club.paymentStartTime = '08:00';
+          if (!club.paymentEndTime) club.paymentEndTime = '16:00';
+        });
+      }
+    }
+
+    // تصدير إلى Excel
+    function exportExcel() {
+      if (clubsData.length === 0) {
+        alert('لا توجد بيانات للتصدير');
+        return;
+      }
+      
+      // تحضير البيانات للتصدير
+      const dataToExport = clubsData.map(club => ({
+        'اسم النادي': club.name,
+        'موعد الانتخابات الأول': formatDate(club.election1),
+        'وقت الانتخابات الأول': formatTimeTo12H(club.election1Time),
+        'موعد الانتخابات الثاني': formatDate(club.election2),
+        'وقت الانتخابات الثاني': formatTimeTo12H(club.election2Time),
+        'بداية التسديد': formatDate(club.paymentStart),
+        'وقت بداية التسديد': formatTimeTo12H(club.paymentStartTime),
+        'نهاية التسديد': formatDate(club.paymentEnd),
+        'وقت نهاية التسديد': formatTimeTo12H(club.paymentEndTime)
+      }));
+      
+      // إنشاء ورقة عمل
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'مواعيد الانتخابات');
+      
+      // تحميل الملف
+      XLSX.writeFile(wb, 'مواعيد_انتخابات_الأندية.xlsx');
+    }
+
+    // إنشاء نسخة احتياطية
+    function exportBackup() {
+      if (clubsData.length === 0) {
+        alert('لا توجد بيانات لإنشاء نسخة احتياطية');
+        return;
+      }
+      
+      const backupData = {
+        clubs: clubsData,
+        exportDate: new Date().toISOString()
+      };
+      
+      const dataStr = JSON.stringify(backupData);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `election_clubs_backup_${new Date().toISOString().slice(0,10)}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+      
+      // تحديث إحصائيات النسخ الاحتياطي
+      updateBackupStats();
+      
+      alert('تم تصدير النسخة الاحتياطية بنجاح');
+    }
+
+    // استيراد نسخة احتياطية
+    function importBackup() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      
+      input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          try {
+            const backupData = JSON.parse(event.target.result);
+            
+            if (!backupData.clubs || !Array.isArray(backupData.clubs)) {
+              throw new Error('ملف النسخة الاحتياطية غير صالح');
+            }
+            
+            showModal('استيراد النسخة الاحتياطية', 'هل تريد استبدال البيانات الحالية بالبيانات المستوردة؟ سيتم فقدان البيانات الحالية.', function(confirmed) {
+              if (confirmed) {
+                clubsData = backupData.clubs;
+                saveClubsData();
+                renderClubsTable();
+                detectConflicts();
+                updateBackupStats();
+                alert('تم استيراد النسخة الاحتياطية بنجاح');
+              }
+            });
+          } catch (error) {
+            alert('فشل في استيراد النسخة الاحتياطية: ' + error.message);
+          }
+        };
+        
+        reader.readAsText(file);
+      };
+      
+      input.click();
+    }
+
+    // تحديث إحصاءات النسخ الاحتياطي
+    function updateBackupStats() {
+      document.getElementById('clubsCount').textContent = clubsData.length;
+      
+      // حساب حجم البيانات
+      const dataSize = JSON.stringify(clubsData).length;
+      document.getElementById('dataSize').textContent = Math.round(dataSize / 1024) + ' KB';
+      
+      // تحديث تاريخ آخر نسخة احتياطية
+      const lastBackup = localStorage.getItem('lastBackupDate');
+      document.getElementById('lastBackup').textContent = lastBackup ? new Date(lastBackup).toLocaleDateString('ar-EG') : 'لا يوجد';
+    }
+
+    // مسح جميع البيانات
+    function clearAllData() {
+      if (clubsData.length === 0) {
+        alert('لا توجد بيانات للمسح');
+        return;
+      }
+      
+      showModal('مسح جميع البيانات', 'هل أنت متأكد من أنك تريد مسح جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء.', function(confirmed) {
+        if (confirmed) {
+          clubsData = [];
+          localStorage.removeItem('electionClubs');
+          localStorage.removeItem('lastBackupDate');
+          renderClubsTable();
+          detectConflicts();
+          updateBackupStats();
+          alert('تم مسح جميع البيانات بنجاح');
+        }
+      });
+    }
+
+    // إدارة النافذة المنبثقة
+    function showModal(title, message, callback) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalMessage').textContent = message;
+      document.getElementById('confirmationModal').style.display = 'block';
+      modalCallback = callback;
+    }
+
+    function closeModal(confirmed) {
+      document.getElementById('confirmationModal').style.display = 'none';
+      if (modalCallback) {
+        modalCallback(confirmed);
+        modalCallback = null;
+      }
+    }
+  </script>
+</body>
+</html>
