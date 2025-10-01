@@ -192,7 +192,7 @@
     <section id="backup-tab" class="tab-content" style="display:none">
       <div class="panel">
         <h3>نظام النسخ الاحتياطي</h3>
-        <p class="muted">يمكنك تصدير أو استيراد بيانات الأندية (JSON). يدعم ملف  أو كائن احتياطي به الحقول.</p>
+        <p class="muted">يمكنك تصدير أو استيراد بيانات مواعيد اانتخابات الأندية (JSON) يدعم ملف </p>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
           <button class="btn" onclick="exportBackup()">💾 تصدير النسخة الاحتياطية</button>
           <button class="btn" onclick="triggerImportBackup()">📂 استيراد النسخة الاحتياطية</button>
@@ -224,14 +224,14 @@
   </div>
 
 <script>
-/* ================= STATE & DEFAULTS ================= */
+/* ================= الحالة و الوضع الافتراضي ================= */
 let clubsData = []; // {id,name,election1,election2,paymentStart,paymentEnd,editing,_backup}
 const dropdownDefault = [
-  "نادي الأقصى الرياضي","نادي جرش الرياضي","نادي مرصع الرياضي","نادي اليرموك الرياضي",
+  "نادي الأقصى الرياضي","نادي جرش الرياضي","نادي مرصع الرياضي","نادي الكتة الرياضي",
   "نادي كفرخل الرياضي","نادي ساكب الرياضي","نادي الكته الرياضي","نادي قفقفا الرياضي"
 ];
 
-/* ================= STARTUP ================= */
+/* ================= البداية ================= */
 document.addEventListener('DOMContentLoaded', () => {
   attachTabs();
   ensureDropdownOptions();
@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateLastBackupDisplay();
 });
 
-/* ================= TABS ================= */
+/* ================= علامات التبويب ================= */
 function attachTabs(){
   document.querySelectorAll('.tab').forEach(btn=>{
     btn.addEventListener('click', ()=>{
@@ -255,7 +255,6 @@ function attachTabs(){
   });
 }
 
-/* ================= DROPDOWN ================= */
 function ensureDropdownOptions(){
   const select = document.getElementById('clubSelect');
   while(select.options.length > 1) select.remove(1);
@@ -274,7 +273,7 @@ function getDropdownOptions(){
   return opts;
 }
 
-// === الوظيفة الجديدة: حذف نادي من القائمة المنسدلة ===
+// ===  حذف نادي من القائمة المنسدلة ===
 function deleteFromDropdown(){
   const select = document.getElementById('clubSelect');
   const selectedOption = select.options[select.selectedIndex];
@@ -288,7 +287,7 @@ function deleteFromDropdown(){
   
   // التحقق إذا كان النادي موجود في الجدول الرئيسي
   if(clubsData.some(c => c.name === clubName)){
-    alert('لا يمكن حذف النادي من القائمة لأنه موجود في الجدول الرئيسي. يرجى حذفه من الجدول أولاً.');
+    alert('لا يمكن حذف النادي من القائمة لأنه موجود في الجدول الرئيسي يرجى حذفه من الجدول أولا.');
     return;
   }
   
@@ -316,7 +315,7 @@ function performDropdownDelete(clubName){
   alert('تم حذف النادي من القائمة المنسدلة');
 }
 
-/* ================= STORAGE ================= */
+/* ================= التخزين ================= */
 function saveClubsToStorage(){
   try{ const toSave = clubsData.map(c => { const {editing,_backup,...rest} = c; return rest; }); localStorage.setItem('clubs', JSON.stringify(toSave)); } catch(e){}
   updateStats();
@@ -328,7 +327,7 @@ function loadClubsFromStorage(){
   } else clubsData = [];
 }
 
-/* ================= ADD CLUB ================= */
+/* ================= اضافة نادي ================= */
 function addSelectedClub(){
   const sel = document.getElementById('clubSelect');
   const name = sel.value;
@@ -351,7 +350,7 @@ function addNewClubFromInput(){
   saveClubsToStorage(); renderClubsTable(); input.value=''; alert('تمت إضافة النادي الجديد');
 }
 
-/* ================= TABLE RENDER & EDIT ================= */
+/* ================= الجداول ================= */
 function renderClubsTable(){
   const tbody = document.querySelector('#clubsTable tbody'); tbody.innerHTML = '';
   // sort by election1 (empty last)
@@ -462,7 +461,7 @@ function onDateChange(index, field, value){
   renderClubsTable();
 }
 
-/* ================= DELETE ================= */
+/* ================= الحذف للاندية ================= */
 let modalCallback = null;
 function confirmDelete(idx){
   showModal('تأكيد الحذف', `هل تريد حذف النادي "${escapeHtml(clubsData[idx].name)}"؟`, ()=>{ performDelete(idx); });
@@ -474,7 +473,7 @@ function performDelete(idx){
   alert('تم الحذف');
 }
 
-/* ================= CONFLICTS DETECTION ================= */
+/* ================= كشف التعارض ================= */
 /* returns {days,start:Date,end:Date} inclusive */
 function getOverlapRange(s1,e1,s2,e2){
   const a1 = parseDateSafe(s1), b1 = parseDateSafe(e1), a2 = parseDateSafe(s2), b2 = parseDateSafe(e2);
@@ -492,13 +491,13 @@ function detectConflicts(){
     for(let j=i+1;j<clubsData.length;j++){
       const A = clubsData[i], B = clubsData[j];
       
-      // payment vs payment
+      // التسديد مقابل التسديد
       if(A.paymentStart && A.paymentEnd && B.paymentStart && B.paymentEnd){
         const ov = getOverlapRange(A.paymentStart,A.paymentEnd,B.paymentStart,B.paymentEnd);
         if(ov.days>0) conflicts.push({type:'تسديد مع تسديد', club1:A.name, club2:B.name, start:ov.start, end:ov.end, days:ov.days});
       }
       
-      // elections vs payment (الانتخابات الأولى فقط)
+      //الانتخابات مقابل التسديد (الانتخابات الأولى فقط)
       if(A.election1 && B.paymentStart && B.paymentEnd){
         const ov = getOverlapRange(A.election1,A.election1,B.paymentStart,B.paymentEnd);
         if(ov.days>0) conflicts.push({type:'انتخابات مع تسديد', club1:A.name, club2:B.name, start:ov.start, end:ov.end, days:ov.days});
@@ -508,7 +507,7 @@ function detectConflicts(){
         if(ov.days>0) conflicts.push({type:'انتخابات مع تسديد', club1:B.name, club2:A.name, start:ov.start, end:ov.end, days:ov.days});
       }
       
-      // elections vs elections (الانتخابات الأولى فقط)
+      // الانتخابات مقابل الانتخابات (الانتخابات الأولى فقط)
       if(A.election1 && B.election1){
         const ov = getOverlapRange(A.election1,A.election1,B.election1,B.election1);
         if(ov.days>0) conflicts.push({type:'انتخابات مع انتخابات', club1:A.name, club2:B.name, start:ov.start, end:ov.end, days:ov.days});
@@ -541,7 +540,7 @@ function renderConflicts(conflicts){
   container.appendChild(table);
 }
 
-/* ================= EXPORT / IMPORT / CLEAR ================= */
+/* ================= التصدير / استيراد / مسح ================= */
 function exportBackup(){
   const payload = { version:'1.0', exportDate: new Date().toISOString(), clubs: clubsData.map(c=>{ const {editing,_backup,...rest}=c; return rest; }), dropdownOptions: getDropdownOptions() };
   const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json;charset=utf-8'});
@@ -591,7 +590,7 @@ function clearAllData(){
   saveClubsToStorage(); renderClubsTable(); updateLastBackupDisplay(); alert('تم مسح البيانات');
 }
 
-/* Simple CSV exporter (Excel friendly) */
+/* Simple CSV exporter (Excel ) */
 function exportCSV(){
   const rows = [['اسم النادي','الانتخابات 1','الانتخابات 2','بداية التسديد','نهاية التسديد']];
   clubsData.forEach(c => rows.push([c.name || '', c.election1 || '', c.election2 || '', c.paymentStart || '', c.paymentEnd || '']));
@@ -600,7 +599,7 @@ function exportCSV(){
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `clubs-${new Date().toISOString().split('T')[0]}.csv`; a.click();
 }
 
-/* ================= HELPERS ================= */
+/* ================= المساعدة ================= */
 function normalizeClub(obj){
   return {
     id: obj.id || Date.now() + Math.floor(Math.random()*10000),
@@ -641,11 +640,11 @@ function formatDateDisplay(d){
 }
 function escapeHtml(s){ if(s===undefined || s===null) return ''; return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 
-/* UI small helpers */
+/* واجهة المستخدم */
 function updateStats(){ document.getElementById('clubsCount').textContent = `${clubsData.length} نادي`; }
 function updateLastBackupDisplay(){ const s = localStorage.getItem('lastBackup'); document.getElementById('lastBackup').textContent = s ? (new Date(s)).toLocaleString() : 'لا توجد'; }
 
-/* Modal */
+
 function showModal(title, message, onConfirm){
   modalCallback = onConfirm;
   const modal = document.getElementById('confirmModal'); const box = modal.querySelector('.box');
@@ -660,12 +659,13 @@ function closeModal(confirmed){
   modalCallback = null;
 }
 
-/* Expose small functions for console debugging if needed */
+/*  الوظائف و وحدة التحكم */
 window._save = saveClubsToStorage;
 window._load = loadClubsFromStorage;
 
 </script>
 </body>
 </html>
+
 
 
