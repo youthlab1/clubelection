@@ -204,20 +204,20 @@
       </div>
 
       <div class="panel">
-        <h3>إضافة رئيس لنادي جديد</h3>
+        <h3>إضافة إسم رئيس النادي  وإختيار اٍم النادي </h3>
         <div class="controls">
           <input id="presidentName" type="text" placeholder="اسم الرئيس" />
           <select id="presidentClubSelect" aria-label="اختر النادي">
             <option value="">-- اختر النادي --</option>
           </select>
           <input id="cycleStartDate" type="text" placeholder="تاريخ بداية الدورة (يوم/شهر/سنة)" />
-          <button class="btn" onclick="addNewPresident()">➕ إضافة رئيس جديد</button>
+          <button class="btn" onclick="addNewPresident()">➕ إضافة إسم رئيس النادي </button>
         </div>
       </div>
 
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <h3 style="margin:0">رؤساء الأندية</h3>
+          <h3 style="margin:0">قائمة رؤساء الأندية</h3>
           <div style="display:flex;gap:8px">
             <span class="badge" id="presidentsCount">0 رئيس</span>
             <span class="badge" style="background:#d1fae5;color:#065f46" id="eligibleCount">0 مؤهل</span>
@@ -244,7 +244,7 @@
       </div>
 
       <div class="panel">
-        <h3>القواعد الانتخابية</h3>
+       
         <div style="background:#fef3c7;padding:12px;border-radius:8px;border-right:4px solid #f59e0b">
                 </div>
 
@@ -1318,6 +1318,7 @@ window._loadPresidents = loadPresidentsFromStorage;
 </script>
 </body>
 </html>
+
 
 
 
