@@ -193,7 +193,7 @@
       <!-- Reconciliation Dates Section - Input Only -->
       <div class="panel">
         <h3>📅 تواريخ توفيق الأنظمة الداخلية للأندية</h3>
-        <p class="muted">تاريخ توفيق النظام الداخلي هو التاريخ  الذي يحدد بداية احتساب الدورات أي دورة بدأت قبل هذا التاريخ لا تحسب ضمن الثلاث دورات.</p>
+        <p class="muted">تاريخ توفيق النظام الداخلي هو التاريخ المرجعي الذي يُحدد بداية احتساب الدورات. أي دورة بدأت قبل هذا التاريخ لا تُحسب ضمن الثلاث دورات.</p>
         <div class="controls">
           <select id="clubSelectReconciliation">
             <option value="">-- اختر النادي --</option>
@@ -204,20 +204,20 @@
       </div>
 
       <div class="panel">
-        <h3>إضافة إسم رئيس النادي  وإختيار اٍم النادي </h3>
+        <h3>إضافة رئيس لنادي جديد</h3>
         <div class="controls">
           <input id="presidentName" type="text" placeholder="اسم الرئيس" />
           <select id="presidentClubSelect" aria-label="اختر النادي">
             <option value="">-- اختر النادي --</option>
           </select>
           <input id="cycleStartDate" type="text" placeholder="تاريخ بداية الدورة (يوم/شهر/سنة)" />
-          <button class="btn" onclick="addNewPresident()">➕ إضافة إسم رئيس النادي </button>
+          <button class="btn" onclick="addNewPresident()">➕ إضافة رئيس جديد</button>
         </div>
       </div>
 
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <h3 style="margin:0">قائمة رؤساء الأندية</h3>
+          <h3 style="margin:0">رؤساء الأندية</h3>
           <div style="display:flex;gap:8px">
             <span class="badge" id="presidentsCount">0 رئيس</span>
             <span class="badge" style="background:#d1fae5;color:#065f46" id="eligibleCount">0 مؤهل</span>
@@ -244,9 +244,18 @@
       </div>
 
       <div class="panel">
-       
+        <h3>القواعد الانتخابية</h3>
         <div style="background:#fef3c7;padding:12px;border-radius:8px;border-right:4px solid #f59e0b">
-                </div>
+          <p style="margin:0 0 8px 0;font-weight:700">📋 القواعد الأساسية:</p>
+          <ul style="margin:0;padding-right:20px">
+            <li>مدة الدورة الواحدة: <strong>3 سنوات</strong></li>
+            <li>الحد الأقصى للدورات المتتالية: <strong>دورتين فقط</strong> (6 سنوات)</li>
+            <li>بعد دورتين متتاليتين: <strong>يجب الانقطاع دورة واحدة</strong> (3 سنوات)</li>
+            <li>الحد الأقصى الكلي: <strong>3 دورات</strong> (9 سنوات)</li>
+            <li>❌ ممنوع: 3 دورات متتالية مباشرة</li>
+          </ul>
+        </div>
+      </div>
 
       <!-- Reconciliation Dates Table -->
       <div class="panel">
@@ -312,7 +321,30 @@
     </div>
   </div>
 
+<!-- Supabase Client Library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+/* ================= إعدادات Supabase ================= */
+const SUPABASE_URL = 'https://tuaodwxxfkwqlopctksy.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1YW9kd3h4Zmt3cWxvcGN0a3N5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NjQwMDEsImV4cCI6MjA3NTU0MDAwMX0.VNWZrnMFJFzxDPnkXhNBC2wg3y4rXGx7sXbNkuwkBE8';
+
+// إنشاء عميل Supabase
+let supabase = null;
+let USE_SUPABASE = false;
+
+// تهيئة Supabase
+try{
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  USE_SUPABASE = true;
+  console.log('✅ تم الاتصال بـ Supabase بنجاح');
+  console.log('📊 الوضع: تخزين سحابي (Supabase)');
+}catch(e){
+  console.error('❌ فشل الاتصال بـ Supabase:', e);
+  console.log('📊 الوضع: تخزين محلي (localStorage)');
+  USE_SUPABASE = false;
+}
+
 /* ================= الحالة و الوضع الافتراضي ================= */
 let clubsData = []; // {id,name,election1,election2,paymentStart,paymentEnd,editing,_backup}
 let presidentsData = []; // {id,name,clubName,cycles:[{cycleNumber,startDate,endDate,status,countable}],totalCycles,countableCycles,consecutiveCycles,canNominate,nextEligibleDate}
@@ -326,15 +358,32 @@ const dropdownDefault = [
 document.addEventListener('DOMContentLoaded', () => {
   attachTabs();
   ensureDropdownOptions();
-  loadClubsFromStorage();
-  renderClubsTable();
-  updateStats();
-  loadReconciliationDates();
-  renderReconciliationTable();
-  loadPresidentsFromStorage();
-  renderPresidentsTable();
-  updatePresidentsStats();
-  updateLastBackupDisplay();
+  // تحميل البيانات (async)
+  (async () => {
+    await loadClubsFromStorage();
+    renderClubsTable();
+    updateStats();
+    
+    await loadReconciliationDates();
+    renderReconciliationTable();
+    
+    await loadPresidentsFromStorage();
+    renderPresidentsTable();
+    updatePresidentsStats();
+    
+    updateLastBackupDisplay();
+    
+    // تحميل القائمة المنسدلة
+    const options = await loadDropdownOptions();
+    const select = document.getElementById('clubSelect');
+    while(select.options.length > 1) select.remove(1);
+    options.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.text = name;
+      select.add(opt);
+    });
+  })();
 });
 
 /* ================= علامات التبويب ================= */
@@ -368,12 +417,73 @@ function ensureDropdownOptions(){
   });
   if(!saved) localStorage.setItem('dropdownOptions', JSON.stringify(list));
 }
-function saveDropdownOptions(arr){ try{ localStorage.setItem('dropdownOptions', JSON.stringify(arr)); }catch(e){} }
+async function saveDropdownOptions(arr){
+  if(!USE_SUPABASE){
+    try{ localStorage.setItem('dropdownOptions', JSON.stringify(arr)); }catch(e){}
+    return;
+  }
+  
+  // حفظ إلى Supabase
+  try{
+    // حذف جميع الأندية القديمة
+    await supabase.from('dropdown_clubs').delete().neq('id', 0);
+    
+    // إضافة الأندية الجديدة
+    const clubsToInsert = arr.map((name, idx) => ({
+      name: name,
+      sort_order: idx + 1
+    }));
+    
+    const { error } = await supabase
+      .from('dropdown_clubs')
+      .insert(clubsToInsert);
+    
+    if(error) throw error;
+    console.log('✅ تم حفظ القائمة المنسدلة في Supabase');
+  }catch(e){
+    console.error('❌ خطأ في حفظ القائمة المنسدلة:', e);
+  }
+}
+
 function getDropdownOptions(){
   const select = document.getElementById('clubSelect');
   const opts = [];
   for(let i=1;i<select.options.length;i++) opts.push(select.options[i].text);
   return opts;
+}
+
+async function loadDropdownOptions(){
+  if(!USE_SUPABASE){
+    const saved = localStorage.getItem('dropdownOptions');
+    if(saved){
+      try{
+        const options = JSON.parse(saved);
+        return options;
+      }catch(e){}
+    }
+    return dropdownDefault;
+  }
+  
+  // تحميل من Supabase
+  try{
+    const { data, error } = await supabase
+      .from('dropdown_clubs')
+      .select('*')
+      .order('sort_order', { ascending: true });
+    
+    if(error) throw error;
+    
+    if(data && data.length > 0){
+      const options = data.map(club => club.name);
+      console.log(`✅ تم تحميل ${options.length} نادي من القائمة المنسدلة`);
+      return options;
+    }
+    
+    return dropdownDefault;
+  }catch(e){
+    console.error('❌ خطأ في تحميل القائمة المنسدلة:', e);
+    return dropdownDefault;
+  }
 }
 
 // ===  حذف نادي من القائمة المنسدلة ===
@@ -419,15 +529,86 @@ function performDropdownDelete(clubName){
 }
 
 /* ================= التخزين ================= */
-function saveClubsToStorage(){
-  try{ const toSave = clubsData.map(c => { const {editing,_backup,...rest} = c; return rest; }); localStorage.setItem('clubs', JSON.stringify(toSave)); } catch(e){}
+
+// حفظ الأندية
+async function saveClubsToStorage(){
+  if(!USE_SUPABASE){
+    try{ const toSave = clubsData.map(c => { const {editing,_backup,...rest} = c; return rest; }); localStorage.setItem('clubs', JSON.stringify(toSave)); } catch(e){}
+    updateStats();
+    return;
+  }
+  
+  // حفظ إلى Supabase
+  try{
+    for(const club of clubsData){
+      const clubData = {
+        name: club.name,
+        election1: club.election1 || null,
+        election2: club.election2 || null,
+        payment_start: club.paymentStart || null,
+        payment_end: club.paymentEnd || null,
+        updated_at: new Date().toISOString()
+      };
+      
+      if(club.id && typeof club.id === 'number'){
+        // تحديث نادي موجود
+        const { error } = await supabase
+          .from('clubs')
+          .update(clubData)
+          .eq('id', club.id);
+        if(error) throw error;
+      }else{
+        // إضافة نادي جديد
+        const { data, error } = await supabase
+          .from('clubs')
+          .insert([clubData])
+          .select();
+        if(error) throw error;
+        if(data && data[0]) club.id = data[0].id;
+      }
+    }
+    console.log('✅ تم حفظ الأندية في Supabase');
+  }catch(e){
+    console.error('❌ خطأ في حفظ الأندية:', e);
+    alert('حدث خطأ في حفظ البيانات');
+  }
   updateStats();
 }
-function loadClubsFromStorage(){
-  const s = localStorage.getItem('clubs');
-  if(s){
-    try{ clubsData = JSON.parse(s).map(normalizeClub); } catch(e){ clubsData = []; }
-  } else clubsData = [];
+
+// تحميل الأندية
+async function loadClubsFromStorage(){
+  if(!USE_SUPABASE){
+    const s = localStorage.setItem('clubs');
+    if(s){
+      try{ clubsData = JSON.parse(s).map(normalizeClub); } catch(e){ clubsData = []; }
+    } else clubsData = [];
+    return;
+  }
+  
+  // تحميل من Supabase
+  try{
+    const { data, error } = await supabase
+      .from('clubs')
+      .select('*')
+      .order('name', { ascending: true });
+    
+    if(error) throw error;
+    
+    clubsData = data.map(club => ({
+      id: club.id,
+      name: club.name,
+      election1: club.election1 || '',
+      election2: club.election2 || '',
+      paymentStart: club.payment_start || '',
+      paymentEnd: club.payment_end || '',
+      editing: false
+    }));
+    
+    console.log(`✅ تم تحميل ${clubsData.length} نادي من Supabase`);
+  }catch(e){
+    console.error('❌ خطأ في تحميل الأندية:', e);
+    clubsData = [];
+  }
 }
 
 /* ================= اضافة نادي ================= */
@@ -569,9 +750,26 @@ let modalCallback = null;
 function confirmDelete(idx){
   showModal('تأكيد الحذف', `هل تريد حذف النادي "${escapeHtml(clubsData[idx].name)}"؟`, ()=>{ performDelete(idx); });
 }
-function performDelete(idx){
+async function performDelete(idx){
+  const club = clubsData[idx];
+  
+  if(USE_SUPABASE && club.id && typeof club.id === 'number'){
+    try{
+      const { error } = await supabase
+        .from('clubs')
+        .delete()
+        .eq('id', club.id);
+      if(error) throw error;
+      console.log('✅ تم حذف النادي من Supabase');
+    }catch(e){
+      console.error('❌ خطأ في حذف النادي:', e);
+      alert('حدث خطأ في حذف النادي');
+      return;
+    }
+  }
+  
   clubsData.splice(idx,1);
-  saveClubsToStorage();
+  if(!USE_SUPABASE) saveClubsToStorage();
   renderClubsTable();
   alert('تم الحذف');
 }
@@ -798,16 +996,138 @@ function closeModal(confirmed){
 /* ================= الدورات الانتخابية ================= */
 
 // تحميل بيانات الرؤساء من التخزين
-function loadPresidentsFromStorage(){
-  const s = localStorage.getItem('presidents');
-  if(s){
-    try{ presidentsData = JSON.parse(s); } catch(e){ presidentsData = []; }
-  } else presidentsData = [];
+async function loadPresidentsFromStorage(){
+  if(!USE_SUPABASE){
+    const s = localStorage.getItem('presidents');
+    if(s){
+      try{ presidentsData = JSON.parse(s); } catch(e){ presidentsData = []; }
+    } else presidentsData = [];
+    return;
+  }
+  
+  // تحميل من Supabase
+  try{
+    const { data: presidentsRaw, error: presidentsError } = await supabase
+      .from('presidents')
+      .select('*')
+      .order('name', { ascending: true });
+    
+    if(presidentsError) throw presidentsError;
+    
+    presidentsData = [];
+    
+    for(const presidentRaw of presidentsRaw){
+      const { data: cyclesRaw, error: cyclesError } = await supabase
+        .from('election_cycles')
+        .select('*')
+        .eq('president_id', presidentRaw.id)
+        .order('start_date', { ascending: true });
+      
+      if(cyclesError) throw cyclesError;
+      
+      const cycles = cyclesRaw.map((c, idx) => ({
+        cycleNumber: idx + 1,
+        startDate: c.start_date,
+        endDate: c.end_date,
+        status: 'completed',
+        countable: c.countable
+      }));
+      
+      const president = {
+        id: presidentRaw.id,
+        name: presidentRaw.name,
+        clubName: presidentRaw.club_name,
+        cycles: cycles,
+        totalCycles: cycles.length,
+        countableCycles: 0,
+        consecutiveCycles: 0,
+        canNominate: false,
+        nextEligibleDate: ''
+      };
+      
+      calculatePresidentEligibility(president);
+      presidentsData.push(president);
+    }
+    
+    console.log(`✅ تم تحميل ${presidentsData.length} رئيس من Supabase`);
+  }catch(e){
+    console.error('❌ خطأ في تحميل الرؤساء:', e);
+    presidentsData = [];
+  }
 }
 
 // حفظ بيانات الرؤساء
-function savePresidentsToStorage(){
-  try{ localStorage.setItem('presidents', JSON.stringify(presidentsData)); } catch(e){}
+async function savePresidentsToStorage(){
+  if(!USE_SUPABASE){
+    try{ localStorage.setItem('presidents', JSON.stringify(presidentsData)); } catch(e){}
+    updatePresidentsStats();
+    return;
+  }
+  
+  // حفظ إلى Supabase
+  try{
+    for(const president of presidentsData){
+      let presidentId = president.id;
+      
+      if(typeof presidentId === 'number' && presidentId > 1000000000000){
+        // معرف مؤقت من Date.now() - يجب إنشاء سجل جديد
+        const { data, error } = await supabase
+          .from('presidents')
+          .insert([{
+            name: president.name,
+            club_name: president.clubName
+          }])
+          .select();
+        
+        if(error) throw error;
+        if(data && data[0]){
+          presidentId = data[0].id;
+          president.id = presidentId;
+        }
+      }else if(typeof presidentId === 'number'){
+        // تحديث سجل موجود
+        const { error } = await supabase
+          .from('presidents')
+          .update({
+            name: president.name,
+            club_name: president.clubName,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', presidentId);
+        
+        if(error) throw error;
+      }
+      
+      // حفظ الدورات
+      if(presidentId && president.cycles && president.cycles.length > 0){
+        // حذف الدورات القديمة
+        await supabase
+          .from('election_cycles')
+          .delete()
+          .eq('president_id', presidentId);
+        
+        // إضافة الدورات الجديدة
+        const cyclesToInsert = president.cycles.map(cycle => ({
+          president_id: presidentId,
+          start_date: cycle.startDate,
+          end_date: cycle.endDate,
+          countable: cycle.countable
+        }));
+        
+        const { error: cyclesError } = await supabase
+          .from('election_cycles')
+          .insert(cyclesToInsert);
+        
+        if(cyclesError) throw cyclesError;
+      }
+    }
+    
+    console.log('✅ تم حفظ الرؤساء في Supabase');
+  }catch(e){
+    console.error('❌ خطأ في حفظ الرؤساء:', e);
+    alert('حدث خطأ في حفظ بيانات الرؤساء');
+  }
+  
   updatePresidentsStats();
 }
 
@@ -827,18 +1147,63 @@ function populatePresidentClubSelect(){
 /* ================= وظائف تواريخ التوفيق ================= */
 
 // تحميل تواريخ التوفيق من التخزين
-function loadReconciliationDates(){
+async function loadReconciliationDates(){
+  if(!USE_SUPABASE){
+    try{
+      const saved = localStorage.getItem('clubsReconciliation');
+      if(saved) clubsReconciliation = JSON.parse(saved);
+    }catch(e){}
+    return;
+  }
+  
+  // تحميل من Supabase
   try{
-    const saved = localStorage.getItem('clubsReconciliation');
-    if(saved) clubsReconciliation = JSON.parse(saved);
-  }catch(e){}
+    const { data, error } = await supabase
+      .from('club_reconciliation_dates')
+      .select('*');
+    
+    if(error) throw error;
+    
+    clubsReconciliation = {};
+    data.forEach(item => {
+      clubsReconciliation[item.club_name] = item.reconciliation_date;
+    });
+    
+    console.log(`✅ تم تحميل ${data.length} تاريخ توفيق من Supabase`);
+  }catch(e){
+    console.error('❌ خطأ في تحميل تواريخ التوفيق:', e);
+    clubsReconciliation = {};
+  }
 }
 
 // حفظ تواريخ التوفيق
-function saveReconciliationDates(){
+async function saveReconciliationDates(){
+  if(!USE_SUPABASE){
+    try{
+      localStorage.setItem('clubsReconciliation', JSON.stringify(clubsReconciliation));
+    }catch(e){}
+    return;
+  }
+  
+  // حفظ إلى Supabase
   try{
-    localStorage.setItem('clubsReconciliation', JSON.stringify(clubsReconciliation));
-  }catch(e){}
+    for(const [clubName, date] of Object.entries(clubsReconciliation)){
+      const { error } = await supabase
+        .from('club_reconciliation_dates')
+        .upsert({
+          club_name: clubName,
+          reconciliation_date: date,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'club_name'
+        });
+      
+      if(error) throw error;
+    }
+    console.log('✅ تم حفظ تواريخ التوفيق في Supabase');
+  }catch(e){
+    console.error('❌ خطأ في حفظ تواريخ التوفيق:', e);
+  }
 }
 
 // ملء قائمة الأندية في قسم التوفيق
@@ -882,16 +1247,32 @@ function setReconciliationDate(){
 }
 
 // حذف تاريخ التوفيق
-function deleteReconciliationDate(clubName){
+async function deleteReconciliationDate(clubName){
   if(!confirm(`هل تريد حذف تاريخ التوفيق لـ ${clubName}؟`)) return;
   
+  if(USE_SUPABASE){
+    try{
+      const { error } = await supabase
+        .from('club_reconciliation_dates')
+        .delete()
+        .eq('club_name', clubName);
+      
+      if(error) throw error;
+      console.log('✅ تم حذف تاريخ التوفيق من Supabase');
+    }catch(e){
+      console.error('❌ خطأ في حذف تاريخ التوفيق:', e);
+      alert('حدث خطأ في حذف تاريخ التوفيق');
+      return;
+    }
+  }
+  
   delete clubsReconciliation[clubName];
-  saveReconciliationDates();
+  if(!USE_SUPABASE) saveReconciliationDates();
   renderReconciliationTable();
   
   // إعادة حساب أهلية جميع الرؤساء
   presidentsData.forEach(p => calculatePresidentEligibility(p));
-  savePresidentsToStorage();
+  await savePresidentsToStorage();
   renderPresidentsTable();
   
   alert('تم حذف تاريخ التوفيق');
@@ -1318,7 +1699,6 @@ window._loadPresidents = loadPresidentsFromStorage;
 </script>
 </body>
 </html>
-
 
 
 
