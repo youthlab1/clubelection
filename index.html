@@ -243,7 +243,7 @@
         </div>
       </div>
 
-       
+      </div>
 
       <!-- Reconciliation Dates Table -->
       <div class="panel">
@@ -338,8 +338,8 @@ let clubsData = []; // {id,name,election1,election2,paymentStart,paymentEnd,edit
 let presidentsData = []; // {id,name,clubName,cycles:[{cycleNumber,startDate,endDate,status,countable}],totalCycles,countableCycles,consecutiveCycles,canNominate,nextEligibleDate}
 let clubsReconciliation = {}; // {clubName: reconciliationDate}
 const dropdownDefault = [
-  "نادي جرش الرياضي","نادي الأقصى الرياضي","نادي مرصع الرياضي","نادي شباب المصطبة الرياضي",
-  "نادي كفرخل الرياضي","نادي ساكب الرياضي","نادي إتحاد جرش الرياضي","نادي الكتة الرياضي","نادي شباب سوف الرياضي","نادي شباب ريمون الرياضي","نادي شباب الفيحاء الرياضي","نادي شباب مرصع الرياضي","نادي جبة الرياضي","نادي شباب جبة الرياضي","نادي نحلة الرياضي","نادي غزة هاشم الرياضي","نادي الرشايدة الرياضي","نادي قفقفا الرياضي"
+  "نادي الأقصى الرياضي","نادي جرش الرياضي","نادي مرصع الرياضي","نادي شباب المصطبة الرياضي",
+  "نادي كفرخل الرياضي","نادي ساكب الرياضي","نادي الكته الرياضي","نادي قفقفا الرياضي"
 ];
 
 /* ================= البداية ================= */
@@ -851,7 +851,7 @@ function triggerImportBackup(){
   input.onchange = ()=> {
     const file = input.files[0]; if(!file) return;
     const reader = new FileReader();
-    reader.onload = e => {
+    reader.onload = async (e) => {
       try {
         const parsed = JSON.parse(e.target.result);
         if(Array.isArray(parsed)){
@@ -859,31 +859,53 @@ function triggerImportBackup(){
           clubsData = parsed.map(normalizeClub);
         } else if(parsed && parsed.clubs){
           if(!confirm('الملف يبدو نسخة احتياطية. استبدال البيانات الحالية؟')) return;
+          
+          // استيراد الأندية
           clubsData = parsed.clubs.map(normalizeClub);
+          
+          // استيراد القائمة المنسدلة
           if(parsed.dropdownOptions && Array.isArray(parsed.dropdownOptions)){
             const select = document.getElementById('clubSelect');
             while(select.options.length>1) select.remove(1);
-            parsed.dropdownOptions.forEach(name => { const opt=document.createElement('option'); opt.value=name; opt.text=name; select.add(opt); });
-            saveDropdownOptions(parsed.dropdownOptions);
+            parsed.dropdownOptions.forEach(name => { 
+              const opt=document.createElement('option'); 
+              opt.value=name; 
+              opt.text=name; 
+              select.add(opt); 
+            });
+            await saveDropdownOptions(parsed.dropdownOptions);
           }
+          
+          // استيراد تواريخ التوفيق
           if(parsed.clubsReconciliation){
             clubsReconciliation = parsed.clubsReconciliation;
-            saveReconciliationDates();
+            await saveReconciliationDates();
           }
+          
+          // استيراد الرؤساء
           if(parsed.presidents && Array.isArray(parsed.presidents)){
             presidentsData = parsed.presidents;
-            savePresidentsToStorage();
+            await savePresidentsToStorage();
           }
         } else {
           alert('تنسيق الملف غير معروف. تأكد من أنه JSON بصيغة صحيحة.');
           return;
         }
-        saveClubsToStorage(); 
+        
+        // حفظ الأندية (في localStorage أو Supabase)
+        await saveClubsToStorage();
+        
+        // تحديث العرض
         renderClubsTable(); 
         renderReconciliationTable();
         renderPresidentsTable();
         updatePresidentsStats();
-        alert('تم استيراد البيانات بنجاح');
+        
+        if(USE_SUPABASE){
+          alert('تم استيراد البيانات بنجاح وحفظها في Supabase! ✅');
+        }else{
+          alert('تم استيراد البيانات بنجاح');
+        }
       } catch(err){
         alert('خطأ عند قراءة الملف: ' + err.message);
       }
@@ -893,8 +915,30 @@ function triggerImportBackup(){
   input.click();
 }
 
-function clearAllData(){
+async function clearAllData(){
   if(!confirm('هل أنت متأكد من مسح جميع البيانات؟\n\nسيتم مسح:\n- مواعيد الأندية\n- تواريخ التوفيق\n- رؤساء الأندية')) return;
+  
+  // حذف من Supabase إذا كان متصلاً
+  if(USE_SUPABASE){
+    try{
+      // حذف جميع الأندية
+      await supabase.from('clubs').delete().neq('id', 0);
+      
+      // حذف جميع تواريخ التوفيق
+      await supabase.from('club_reconciliation_dates').delete().neq('id', 0);
+      
+      // حذف جميع الرؤساء (سيحذف الدورات تلقائياً بسبب CASCADE)
+      await supabase.from('presidents').delete().neq('id', 0);
+      
+      console.log('✅ تم مسح جميع البيانات من Supabase');
+    }catch(e){
+      console.error('❌ خطأ في مسح البيانات من Supabase:', e);
+      alert('حدث خطأ في مسح البيانات من Supabase');
+      return;
+    }
+  }
+  
+  // مسح البيانات المحلية
   clubsData = []; 
   clubsReconciliation = {};
   presidentsData = [];
@@ -903,13 +947,19 @@ function clearAllData(){
   localStorage.removeItem('presidents');
   localStorage.removeItem('dropdownOptions'); 
   ensureDropdownOptions();
-  saveClubsToStorage(); 
+  
+  // تحديث العرض
   renderClubsTable(); 
   renderReconciliationTable();
   renderPresidentsTable();
   updatePresidentsStats();
   updateLastBackupDisplay(); 
-  alert('تم مسح البيانات');
+  
+  if(USE_SUPABASE){
+    alert('تم مسح جميع البيانات من Supabase و localStorage! ✅');
+  }else{
+    alert('تم مسح البيانات');
+  }
 }
 
 /* Simple CSV exporter (Excel ) */
@@ -1132,7 +1182,7 @@ function populatePresidentClubSelect(){
   });
 }
 
-/* ================= وظائف تواريخ التوفيق ================= */
+/* ================= وظائف تواريخ توفيق النظام الداخلي ================= */
 
 // تحميل تواريخ التوفيق من التخزين
 async function loadReconciliationDates(){
@@ -1194,7 +1244,7 @@ async function saveReconciliationDates(){
   }
 }
 
-// ملء قائمة الأندية في قسم التوفيق
+// ملء قائمة الأندية في قسم توفيق النظام الداخلي
 function populateReconciliationClubSelect(){
   const select = document.getElementById('clubSelectReconciliation');
   while(select.options.length > 1) select.remove(1);
@@ -1224,7 +1274,7 @@ function setReconciliationDate(){
   saveReconciliationDates();
   renderReconciliationTable();
   
-  // إعادة حساب أهلية جميع الرؤساء
+  // إعادة حساب أهلية جميع رؤساء الاندية
   presidentsData.forEach(p => calculatePresidentEligibility(p));
   savePresidentsToStorage();
   renderPresidentsTable();
@@ -1258,15 +1308,15 @@ async function deleteReconciliationDate(clubName){
   if(!USE_SUPABASE) saveReconciliationDates();
   renderReconciliationTable();
   
-  // إعادة حساب أهلية جميع الرؤساء
+  // إعادة حساب أهلية جميع رؤساء الأندية
   presidentsData.forEach(p => calculatePresidentEligibility(p));
   await savePresidentsToStorage();
   renderPresidentsTable();
   
-  alert('تم حذف تاريخ التوفيق');
+  alert('تم حذف تاريخ توفيق النظام الداخلي');
 }
 
-// عرض جدول تواريخ التوفيق
+// عرض جدول تواريخ توفيق النظام الداخلي 
 function renderReconciliationTable(){
   const tbody = document.querySelector('#reconciliationDatesTable tbody');
   tbody.innerHTML = '';
@@ -1274,7 +1324,7 @@ function renderReconciliationTable(){
   const clubs = Object.keys(clubsReconciliation).sort();
   
   if(clubs.length === 0){
-    tbody.innerHTML = '<tr><td colspan="3" class="muted">لا توجد تواريخ توفيق محفوظة</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" class="muted">لا توجد تواريخ توفيق نظام داخلي محفوظة</td></tr>';
     return;
   }
   
@@ -1370,7 +1420,7 @@ function addYearsToDate(dateString, years){
 
 /* ================= وظائف الرؤساء ================= */
 
-// إضافة رئيس جديد
+// إضافة رئيس نادي جديد
 function addNewPresident(){
   const nameInput = document.getElementById('presidentName');
   const clubSelect = document.getElementById('presidentClubSelect');
@@ -1380,7 +1430,7 @@ function addNewPresident(){
   const clubName = clubSelect.value;
   const startDate = dateInput.value.trim();
   
-  if(!name){ alert('الرجاء إدخال اسم الرئيس'); return; }
+  if(!name){ alert('الرجاء إدخال اسم رئيس النادي'); return; }
   if(!clubName){ alert('الرجاء اختيار النادي'); return; }
   if(!startDate){ alert('الرجاء إدخال تاريخ بداية الدورة'); return; }
   if(!isValidDate(startDate)){ alert('تاريخ غير صحيح. الصيغة المطلوبة: يوم/شهر/سنة (مثال: 15/03/2022)'); return; }
@@ -1436,12 +1486,12 @@ function calculateConsecutiveCycles(cycles){
   return countableCycles.length;
 }
 
-// تحديد الدورات المحسوبة بناءً على تاريخ التوفيق
+// تحديد الدورات المحسوبة بناءً على تاريخ توفيق النظام الداخلي للنادي
 function markCountableCycles(president){
   const reconciliationDate = clubsReconciliation[president.clubName];
   
   if(!reconciliationDate){
-    // إذا لم يكن هناك تاريخ توفيق، جميع الدورات محسوبة
+    // إذا لم يكن هناك تاريخ توفيق للنظام الداخلي، جميع الدورات محسوبة
     president.cycles.forEach(cycle => {
       cycle.countable = true;
     });
@@ -1454,7 +1504,7 @@ function markCountableCycles(president){
   });
 }
 
-// حساب أهلية الترشح
+//  حساب أهلية الترشح لرئاسة النادي
 function calculatePresidentEligibility(president){
   // تحديد الدورات المحسوبة
   markCountableCycles(president);
@@ -1509,10 +1559,10 @@ function addCycleToPresident(index){
     return;
   }
   
-  // لا يوجد قيد على التاريخ - يُسمح بإدخال أي تاريخ
+  // لا يوجد قيد على التاريخ - يسمح بإدخال أي تاريخ
   // لأنه قد تكون هناك هيئة إدارية مؤقتة (3-12 شهر) بين الدورات
   
-  // جميع الدورات المضافة تُعتبر متتالية
+  // جميع الدورات المضافة تعتبر متتالية
   // التحقق من عدم تجاوز دورتين متتاليتين
   if(president.consecutiveCycles >= 2){
     alert('⛔ لا يمكن إضافة دورة ثالثة متتالية\n\nيجب الانقطاع دورة واحدة على الأقل (عدم إضافة دورة جديدة)');
@@ -1540,7 +1590,7 @@ function addCycleToPresident(index){
   alert('تمت إضافة الدورة بنجاح');
 }
 
-// عرض تفاصيل دورات الرئيس
+//   عرض تفاصيل دورات رئيس النادي
 function showPresidentCycles(index){
   const president = presidentsData[index];
   const modal = document.getElementById('cyclesModal');
@@ -1571,7 +1621,7 @@ function showPresidentCycles(index){
     const statusText = cycle.status === 'current' ? '🟢 حالية' : '✅ مكتملة';
     const countableText = cycle.countable ? '✅ نعم' : '❌ لا';
     
-    // جميع الدورات المحسوبة تُعتبر متتالية
+    // جميع الدورات المحسوبة تعتبر متتالية
     const isConsecutive = (i > 0 && cycle.countable && president.cycles[i-1].countable);
     const consecutiveIcon = isConsecutive ? ' 🔗' : '';
     
@@ -1587,7 +1637,7 @@ function showPresidentCycles(index){
   
   html += '</tbody></table>';
   
-  // إضافة مخطط زمني بصري
+  // إضافة مخطط زمني 
   html += '<div style="margin-top:16px;padding:12px;background:#f9fafb;border-radius:8px">';
   html += '<div style="font-weight:700;margin-bottom:8px">المخطط الزمني:</div>';
   html += '<div style="display:flex;gap:4px;flex-wrap:wrap">';
@@ -1619,14 +1669,14 @@ function closeCyclesModal(){
   document.getElementById('cyclesModal').style.display = 'none';
 }
 
-// حذف رئيس
+// حذف اسم رئيس النادي
 function deletePresident(index){
   const president = presidentsData[index];
-  showModal('تأكيد الحذف', `هل تريد حذف الرئيس "${president.name}" من نادي "${president.clubName}"؟`, ()=>{
+  showModal('تأكيد الحذف', `هل تريد حذف رئيس النادي "${president.name}" من نادي "${president.clubName}"؟`, ()=>{
     presidentsData.splice(index, 1);
     savePresidentsToStorage();
     renderPresidentsTable();
-    alert('تم حذف الرئيس');
+    alert('تم حذف رئيس النادي');
   });
 }
 
@@ -1687,8 +1737,6 @@ window._loadPresidents = loadPresidentsFromStorage;
 </script>
 </body>
 </html>
-
-
 
 
 
