@@ -138,6 +138,7 @@
   <nav>
     <button class="tab active" data-tab="main-tab">الصفحة الرئيسية</button>
     <button class="tab" data-tab="cycles-tab">الدورات الانتخابية</button>
+    <button class="tab" data-tab="procedures-tab">الإجراءات الانتخابية</button>
     <button class="tab" data-tab="backup-tab">النسخ الاحتياطي</button>
   </nav>
 
@@ -258,6 +259,58 @@
             </thead>
             <tbody></tbody>
           </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Procedures Tab -->
+    <section id="procedures-tab" class="tab-content" style="display:none">
+      <!-- قسم التنبيهات -->
+      <div class="panel" style="background:linear-gradient(135deg,#fef3c7,#fed7aa);border:2px solid #f59e0b">
+        <h3 style="color:#92400e">🔔 تنبيهات الأندية القريبة من الانتخابات</h3>
+        <div id="alerts-container" style="margin-top:12px">
+          <div class="muted">جاري تحميل التنبيهات...</div>
+        </div>
+      </div>
+
+      <!-- قسم اختيار النادي -->
+      <div class="panel" style="margin-top:16px">
+        <h3>اختر النادي لعرض الإجراءات</h3>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px">
+          <select id="proceduresClubSelect" style="flex:1;min-width:200px;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px">
+            <option value="">-- اختر ناديًا --</option>
+          </select>
+          <button class="btn" onclick="loadClubProcedures()">📋 عرض الإجراءات</button>
+        </div>
+      </div>
+
+      <!-- قسم الإجراءات -->
+      <div id="procedures-container" style="margin-top:16px;display:none">
+        <div class="panel">
+          <h3 id="procedures-title">الإجراءات الانتخابية</h3>
+          
+          <!-- شريط التقدم -->
+          <div style="margin:16px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-weight:600">التقدم:</span>
+              <span id="progress-text" style="font-weight:600;color:var(--primary1)">0/12 (0%)</span>
+            </div>
+            <div style="background:#e5e7eb;border-radius:8px;height:24px;overflow:hidden">
+              <div id="progress-bar" style="background:linear-gradient(90deg,var(--primary1),var(--primary2));height:100%;width:0%;transition:width 0.3s"></div>
+            </div>
+          </div>
+
+          <!-- المرحلة الأولى -->
+          <div style="margin-top:24px">
+            <h4 style="background:var(--primary1);color:#fff;padding:10px;border-radius:8px;margin:0 0 12px 0">المرحلة الأولى: قبل التسديد</h4>
+            <div id="procedures-phase1"></div>
+          </div>
+
+          <!-- المرحلة الثانية -->
+          <div style="margin-top:24px">
+            <h4 style="background:var(--primary2);color:#fff;padding:10px;border-radius:8px;margin:0 0 12px 0">المرحلة الثانية: بعد التسديد</h4>
+            <div id="procedures-phase2"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -389,6 +442,10 @@ function attachTabs(){
         renderReconciliationTable();
         renderPresidentsTable();
         updatePresidentsStats();
+      }
+      if(id === 'procedures-tab') {
+        loadAlerts();
+        populateProceduresClubSelect();
       }
     });
   });
@@ -1761,6 +1818,286 @@ function updatePresidentsStats(){
   document.getElementById('presidentsCount').textContent = `${total} رئيس`;
   document.getElementById('eligibleCount').textContent = `${eligible} مؤهل`;
   document.getElementById('ineligibleCount').textContent = `${ineligible} ممنوع`;
+}
+
+/* ================= وظائف الإجراءات الانتخابية ================= */
+
+// قائمة الإجراءات
+const PROCEDURES_LIST = [
+  { number: 1, title: 'إعلام النادي باقتراب موعد الانتخابات', phase: 1 },
+  { number: 2, title: 'التنسيق مع إدارة النادي لتحديد موعد الانتخابات والتسديد', phase: 1 },
+  { number: 3, title: 'زيارة موقع الاجتماع والتأكد من توفر بيئة آمنة لعقد الاجتماع', phase: 1 },
+  { number: 4, title: 'إرسال كتاب موافقة للنادي لإجراء الانتخابات بعد تقديم كتاب من الهيئة الإدارية', phase: 1 },
+  { number: 5, title: 'متابعة قوائم المرشحين في حال أن يكون الترشيح يسبق يوم الاجتماع الانتخابي ومتابعة فتح وإغلاق الترشيح', phase: 1 },
+  { number: 6, title: 'متابعة نشر النادي إعلان في الجريدة وعلى لوحة إعلانات النادي ومواقع التواصل قبل 30 يوم على الأقل وإحضار نسخة منه', phase: 1 },
+  { number: 7, title: 'تشكيل لجنة للتسديد', phase: 1 },
+  { number: 8, title: 'متابعة إجراءات الاعتراض', phase: 1 },
+  { number: 9, title: 'إعداد كشف بأعضاء الهيئة العامة المسددين لاشتراكاتهم وتوفير أوراق الاقتراع والقرطاسية وتزويد المديرية بهم', phase: 1 },
+  { number: 10, title: 'تشكيل لجنة للإشراف على الانتخابات', phase: 2 },
+  { number: 11, title: 'مخاطبة محافظ جرش', phase: 2 },
+  { number: 12, title: 'تحضير محاضر جلسة (عدد 3)', phase: 2 }
+];
+
+// متغيرات عامة
+let currentProceduresClub = '';
+let clubProcedures = [];
+
+// تحميل التنبيهات
+async function loadAlerts() {
+  const container = document.getElementById('alerts-container');
+  
+  try {
+    const alerts = [];
+    const today = new Date();
+    
+    // حساب التنبيهات لكل نادي
+    for (const club of clubsData) {
+      if (!club.election1) continue;
+      
+      // حساب تاريخ الانتهاء (آخر انتخابات + 3 سنوات)
+      const lastElection = parseDate(club.election1);
+      if (!lastElection) continue;
+      
+      const endDate = new Date(lastElection);
+      endDate.setFullYear(endDate.getFullYear() + 3);
+      
+      // حساب الأيام المتبقية
+      const diffTime = endDate - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      // إذا كان ≤ 70 يوم، أضف تنبيه
+      if (diffDays <= 70 && diffDays > 0) {
+        alerts.push({
+          clubName: club.name,
+          daysLeft: diffDays,
+          endDate: formatDate(endDate)
+        });
+      }
+    }
+    
+    // ترتيب حسب الأيام المتبقية (الأقرب أولاً)
+    alerts.sort((a, b) => a.daysLeft - b.daysLeft);
+    
+    // عرض التنبيهات
+    if (alerts.length === 0) {
+      container.innerHTML = '<div style="color:var(--success);font-weight:600">✅ لا توجد تنبيهات حالياً</div>';
+    } else {
+      let html = '<div style="display:flex;flex-direction:column;gap:8px">';
+      alerts.forEach(alert => {
+        const urgency = alert.daysLeft <= 30 ? 'danger' : alert.daysLeft <= 50 ? 'warning' : 'info';
+        const icon = alert.daysLeft <= 30 ? '🔴' : '⚠️';
+        html += `
+          <div style="background:#fff;padding:12px;border-radius:8px;border-right:4px solid var(--${urgency});display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:600">${icon} ${escapeHtml(alert.clubName)}</span>
+            <span style="color:var(--${urgency});font-weight:600">${alert.daysLeft} يوم متبقي</span>
+          </div>
+        `;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+  } catch (e) {
+    console.error('خطأ في تحميل التنبيهات:', e);
+    container.innerHTML = '<div style="color:var(--danger)">❌ حدث خطأ في تحميل التنبيهات</div>';
+  }
+}
+
+// ملء قائمة الأندية في صفحة الإجراءات
+function populateProceduresClubSelect() {
+  const select = document.getElementById('proceduresClubSelect');
+  while (select.options.length > 1) select.remove(1);
+  
+  clubsData.forEach(club => {
+    const opt = document.createElement('option');
+    opt.value = club.name;
+    opt.text = club.name;
+    select.add(opt);
+  });
+}
+
+// تحميل إجراءات نادي معين
+async function loadClubProcedures() {
+  const select = document.getElementById('proceduresClubSelect');
+  const clubName = select.value;
+  
+  if (!clubName) {
+    alert('الرجاء اختيار نادي');
+    return;
+  }
+  
+  currentProceduresClub = clubName;
+  
+  if (!USE_SUPABASE) {
+    // localStorage fallback
+    const stored = localStorage.getItem(`procedures_${clubName}`);
+    if (stored) {
+      clubProcedures = JSON.parse(stored);
+    } else {
+      clubProcedures = PROCEDURES_LIST.map(p => ({
+        ...p,
+        isCompleted: false,
+        notes: '',
+        completedDate: null
+      }));
+    }
+    renderProcedures();
+    return;
+  }
+  
+  // تحميل من Supabase
+  try {
+    const { data, error } = await supabase
+      .from('election_procedures')
+      .select('*')
+      .eq('club_name', clubName)
+      .order('procedure_number', { ascending: true });
+    
+    if (error) throw error;
+    
+    // دمج البيانات المحملة مع قائمة الإجراءات
+    clubProcedures = PROCEDURES_LIST.map(p => {
+      const saved = data.find(d => d.procedure_number === p.number);
+      return {
+        ...p,
+        isCompleted: saved ? saved.is_completed : false,
+        notes: saved ? saved.notes || '' : '',
+        completedDate: saved ? saved.completed_date : null
+      };
+    });
+    
+    renderProcedures();
+  } catch (e) {
+    console.error('خطأ في تحميل الإجراءات:', e);
+    alert('حدث خطأ في تحميل الإجراءات');
+  }
+}
+
+// عرض الإجراءات
+function renderProcedures() {
+  const container = document.getElementById('procedures-container');
+  const title = document.getElementById('procedures-title');
+  const phase1 = document.getElementById('procedures-phase1');
+  const phase2 = document.getElementById('procedures-phase2');
+  
+  container.style.display = 'block';
+  title.textContent = `الإجراءات الانتخابية - ${currentProceduresClub}`;
+  
+  // حساب التقدم
+  const completed = clubProcedures.filter(p => p.isCompleted).length;
+  const total = clubProcedures.length;
+  const percentage = Math.round((completed / total) * 100);
+  
+  document.getElementById('progress-text').textContent = `${completed}/${total} (${percentage}%)`;
+  document.getElementById('progress-bar').style.width = `${percentage}%`;
+  
+  // عرض المرحلة الأولى
+  phase1.innerHTML = clubProcedures
+    .filter(p => p.phase === 1)
+    .map(p => renderProcedureItem(p))
+    .join('');
+  
+  // عرض المرحلة الثانية
+  phase2.innerHTML = clubProcedures
+    .filter(p => p.phase === 2)
+    .map(p => renderProcedureItem(p))
+    .join('');
+}
+
+// عرض عنصر إجراء واحد
+function renderProcedureItem(procedure) {
+  const checked = procedure.isCompleted ? 'checked' : '';
+  const checkboxStyle = procedure.isCompleted ? 'color:var(--success)' : '';
+  const dateStr = procedure.completedDate ? new Date(procedure.completedDate).toLocaleDateString('ar-EG') : '';
+  
+  return `
+    <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:12px;border:1px solid #e5e7eb">
+      <div style="display:flex;align-items:start;gap:12px">
+        <input type="checkbox" ${checked} onchange="toggleProcedure(${procedure.number})" 
+               style="width:20px;height:20px;margin-top:2px;cursor:pointer;${checkboxStyle}">
+        <div style="flex:1">
+          <div style="font-weight:600;margin-bottom:8px;${procedure.isCompleted ? 'text-decoration:line-through;color:var(--muted)' : ''}">
+            ${procedure.number}. ${escapeHtml(procedure.title)}
+          </div>
+          ${procedure.isCompleted && dateStr ? `<div style="font-size:12px;color:var(--success);margin-bottom:8px">📅 تاريخ الإكمال: ${dateStr}</div>` : ''}
+          <textarea id="notes-${procedure.number}" placeholder="📝 ملاحظات..." 
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;min-height:60px;font-family:inherit"
+                    onchange="saveProcedureNotes(${procedure.number})">${escapeHtml(procedure.notes)}</textarea>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// تبديل حالة إجراء
+async function toggleProcedure(procedureNumber) {
+  const procedure = clubProcedures.find(p => p.number === procedureNumber);
+  if (!procedure) return;
+  
+  procedure.isCompleted = !procedure.isCompleted;
+  procedure.completedDate = procedure.isCompleted ? new Date().toISOString() : null;
+  
+  await saveProcedure(procedure);
+  renderProcedures();
+}
+
+// حفظ ملاحظات إجراء
+async function saveProcedureNotes(procedureNumber) {
+  const procedure = clubProcedures.find(p => p.number === procedureNumber);
+  if (!procedure) return;
+  
+  const textarea = document.getElementById(`notes-${procedureNumber}`);
+  procedure.notes = textarea.value;
+  
+  await saveProcedure(procedure);
+}
+
+// حفظ إجراء في التخزين
+async function saveProcedure(procedure) {
+  if (!USE_SUPABASE) {
+    // localStorage fallback
+    localStorage.setItem(`procedures_${currentProceduresClub}`, JSON.stringify(clubProcedures));
+    return;
+  }
+  
+  // حفظ في Supabase
+  try {
+    const procedureData = {
+      club_name: currentProceduresClub,
+      procedure_number: procedure.number,
+      is_completed: procedure.isCompleted,
+      notes: procedure.notes || null,
+      completed_date: procedure.completedDate,
+      updated_at: new Date().toISOString()
+    };
+    
+    // محاولة التحديث أولاً
+    const { data: existing } = await supabase
+      .from('election_procedures')
+      .select('id')
+      .eq('club_name', currentProceduresClub)
+      .eq('procedure_number', procedure.number)
+      .single();
+    
+    if (existing) {
+      // تحديث
+      const { error } = await supabase
+        .from('election_procedures')
+        .update(procedureData)
+        .eq('id', existing.id);
+      if (error) throw error;
+    } else {
+      // إضافة
+      const { error } = await supabase
+        .from('election_procedures')
+        .insert([procedureData]);
+      if (error) throw error;
+    }
+    
+    console.log('✅ تم حفظ الإجراء');
+  } catch (e) {
+    console.error('❌ خطأ في حفظ الإجراء:', e);
+    alert('حدث خطأ في حفظ الإجراء');
+  }
 }
 
 /*  الوظائف و وحدة التحكم */
