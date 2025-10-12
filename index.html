@@ -244,7 +244,7 @@
         </div>
       </div>
 
-     
+    
       <!-- Reconciliation Dates Table -->
       <div class="panel">
         <h3>📋 قائمة تواريخ توفيق الأنظمة الداخلية</h3>
@@ -267,20 +267,20 @@
     <section id="procedures-tab" class="tab-content" style="display:none">
       <!-- قسم التنبيهات -->
       <div class="panel" style="background:linear-gradient(135deg,#fef3c7,#fed7aa);border:2px solid #f59e0b">
-        <h3 style="color:#92400e">🔔 تنبيهات الأندية القريبة من الانتخابات</h3>
-        <div id="alerts-container" style="margin-top:12px">
+        <h3 style="color:#92400e;cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleAlerts()">
+          <span>🔔 قائمة التنبيهات</span>
+          <span id="alerts-toggle-icon">▼</span>
+        </h3>
+        <div id="alerts-container" style="margin-top:12px;display:none">
           <div class="muted">جاري تحميل التنبيهات...</div>
         </div>
       </div>
 
       <!-- قسم اختيار النادي -->
       <div class="panel" style="margin-top:16px">
-        <h3>اختر النادي لعرض الإجراءات</h3>
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px">
-          <select id="proceduresClubSelect" style="flex:1;min-width:200px;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px">
-            <option value="">-- اختر ناديًا --</option>
-          </select>
-          <button class="btn" onclick="loadClubProcedures()">📋 عرض الإجراءات</button>
+        <h3>الأندية المسجلة</h3>
+        <div id="clubs-list-for-procedures" style="margin-top:12px">
+          <div class="muted">لا توجد أندية مسجلة</div>
         </div>
       </div>
 
@@ -425,6 +425,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   })();
 });
+
+/* ================= دوال الإجراءات الانتخابية ================= */
+// تبديل عرض/إخفاء التنبيهات
+function toggleAlerts() {
+  const container = document.getElementById('alerts-container');
+  const icon = document.getElementById('alerts-toggle-icon');
+  
+  if (container.style.display === 'none') {
+    container.style.display = 'block';
+    icon.textContent = '▲';
+  } else {
+    container.style.display = 'none';
+    icon.textContent = '▼';
+  }
+}
 
 /* ================= علامات التبويب ================= */
 function attachTabs(){
@@ -1902,24 +1917,29 @@ async function loadAlerts() {
   }
 }
 
-// ملء قائمة الأندية في صفحة الإجراءات
+// عرض قائمة الأندية المسجلة كأزرار
 function populateProceduresClubSelect() {
-  const select = document.getElementById('proceduresClubSelect');
-  while (select.options.length > 1) select.remove(1);
+  const container = document.getElementById('clubs-list-for-procedures');
   
+  if (clubsData.length === 0) {
+    container.innerHTML = '<div class="muted">لا توجد أندية مسجلة</div>';
+    return;
+  }
+  
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px">';
   clubsData.forEach(club => {
-    const opt = document.createElement('option');
-    opt.value = club.name;
-    opt.text = club.name;
-    select.add(opt);
+    html += `
+      <button class="btn" style="text-align:right;padding:12px" onclick="loadClubProcedures('${escapeHtml(club.name)}')">
+        📋 ${escapeHtml(club.name)}
+      </button>
+    `;
   });
+  html += '</div>';
+  container.innerHTML = html;
 }
 
 // تحميل إجراءات نادي معين
-async function loadClubProcedures() {
-  const select = document.getElementById('proceduresClubSelect');
-  const clubName = select.value;
-  
+async function loadClubProcedures(clubName) {
   if (!clubName) {
     alert('الرجاء اختيار نادي');
     return;
@@ -2020,8 +2040,9 @@ function renderProcedureItem(procedure) {
           </div>
           ${procedure.isCompleted && dateStr ? `<div style="font-size:12px;color:var(--success);margin-bottom:8px">📅 تاريخ الإكمال: ${dateStr}</div>` : ''}
           <textarea id="notes-${procedure.number}" placeholder="📝 ملاحظات..." 
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;min-height:60px;font-family:inherit"
-                    onchange="saveProcedureNotes(${procedure.number})">${escapeHtml(procedure.notes)}</textarea>
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;min-height:40px;font-family:inherit"
+                    >${escapeHtml(procedure.notes)}</textarea>
+          <button class="btn" style="margin-top:8px;font-size:12px;padding:6px 12px" onclick="saveProcedureNotes(${procedure.number})">💾 حفظ الملاحظة</button>
         </div>
       </div>
     </div>
@@ -2049,6 +2070,9 @@ async function saveProcedureNotes(procedureNumber) {
   procedure.notes = textarea.value;
   
   await saveProcedure(procedure);
+  
+  // رسالة نجاح
+  alert('✅ تم حفظ الملاحظة بنجاح!');
 }
 
 // حفظ إجراء في التخزين
