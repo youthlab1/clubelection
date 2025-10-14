@@ -69,6 +69,9 @@
     .actions .delete{background:var(--danger);color:#fff}
     .actions .save{background:var(--success);color:#fff}
     .actions .cancel{background:#6b7280;color:#fff}
+    .btn-icon{background:transparent;border:none;cursor:pointer;font-size:18px;padding:4px 8px;transition:transform 0.2s}
+    .btn-icon:hover{transform:scale(1.2)}
+    .btn-icon.danger:hover{filter:brightness(0.8)}
     .badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#eef2ff;color:var(--primary1);font-weight:700}
     .conflicts-table{width:100%;border-collapse:collapse;margin-top:8px;min-width:500px}
     .conflict-type{font-weight:700;color:var(--primary2)}
@@ -140,6 +143,7 @@
     <button class="tab" data-tab="cycles-tab">الدورات الانتخابية</button>
     <button class="tab" data-tab="procedures-tab">الإجراءات الانتخابية</button>
     <button class="tab" data-tab="backup-tab">النسخ الاحتياطي</button>
+    <button class="tab" data-tab="clubs-info-tab">📋 قائمة الأندية</button>
   </nav>
 
   <main>
@@ -188,7 +192,72 @@
         <h3>التعارضات المكتشفة</h3>
         <div class="responsive-container" id="conflictsContainer"></div>
       </div>
+
+      <!-- Clubs Info Subpage -->
+      <!-- Clubs Info Tab -->
+      </div>
+
     </section>
+    <section id="clubs-info-tab" class="tab-content" style="display:none">
+        <!-- Header Section -->
+        <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);padding:20px;border-radius:12px;margin-bottom:20px;box-shadow:0 4px 6px rgba(0,0,0,0.1)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h2 style="margin:0;color:white;font-size:24px">📋 قائمة الأندية الرياضية</h2>
+              <p style="margin:8px 0 0 0;color:rgba(255,255,255,0.9);font-size:14px">إدارة بيانات الأندية ومواعيد انتخاباتها</p>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <input id="clubsInfoSearch_subpage" type="text" placeholder="🔍 البحث عن نادي أو رئيس..." oninput="searchClubsInfo_subpage()" style="padding:12px 16px;border-radius:10px;border:2px solid #e5e7eb;min-width:300px;font-size:14px" />
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          
+          <!-- Add/Edit Club Info Form -->
+          <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:16px">
+            <h4 style="margin-top:0">إضافة/تعديل بيانات النادي</h4>
+            <div class="controls">
+              <select id="clubInfoSelect_subpage" aria-label="اختر النادي" onchange="loadClubInfoForEdit_subpage()">
+                <option value="">-- اختر النادي --</option>
+              </select>
+              
+              <input id="clubInfoName_subpage" type="text" placeholder="اسم النادي" readonly style="background:#e5e7eb" />
+              
+              <input id="presidentNameInfo_subpage" type="text" placeholder="اسم رئيس النادي" />
+              
+              <input id="phoneNumber_subpage" type="text" placeholder="رقم الهاتف (مثال: 0791234567)" />
+              
+              <input id="lastElectionDate_subpage" type="text" placeholder="تاريخ آخر انتخابات (يوم/شهر/سنة)" />
+              
+              <button class="btn" onclick="saveClubInfo_subpage()">💾 حفظ البيانات</button>
+              <button class="btn secondary" onclick="clearClubInfoForm_subpage()">🔄 مسح الحقول</button>
+            </div>
+          </div>
+
+          <!-- Clubs Info Table -->
+          <div class="responsive-container">
+            <table id="clubsInfoTable_subpage" aria-label="جدول قائمة الأندية">
+              <thead>
+                <tr>
+                  <th>اسم النادي</th>
+                  <th>اسم الرئيس</th>
+                  <th>رقم الهاتف</th>
+                  <th>آخر انتخابات</th>
+                  <th>تاريخ الانتهاء</th>
+                  <th>الأيام المتبقية</th>
+                  <th>الحالة</th>
+                  <th>إجراءات</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          
+          <div style="margin-top:12px">
+            <span class="badge" id="clubsInfoCount_subpage">0 نادي</span>
+          </div>
+        </section>
     <!-- Election Cycles Tab -->
     <section id="cycles-tab" class="tab-content" style="display:none">
       <!-- Reconciliation Dates Section - Input Only -->
@@ -244,7 +313,8 @@
         </div>
       </div>
 
-    
+     
+
       <!-- Reconciliation Dates Table -->
       <div class="panel">
         <h3>📋 قائمة تواريخ توفيق الأنظمة الداخلية</h3>
@@ -267,10 +337,17 @@
     <section id="procedures-tab" class="tab-content" style="display:none">
       <!-- قسم التنبيهات -->
       <div class="panel" style="background:linear-gradient(135deg,#fef3c7,#fed7aa);border:2px solid #f59e0b">
-        <h3 style="color:#92400e;cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleAlerts()">
-          <span>🔔 قائمة التنبيهات</span>
-          <span id="alerts-toggle-icon">▼</span>
-        </h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3 style="color:#92400e;cursor:pointer;margin:0;flex:1" onclick="toggleAlerts()">
+            <span>🔔 قائمة التنبيهات</span>
+            <span id="alerts-toggle-icon" style="margin-right:8px">▼</span>
+          </h3>
+          <div style="display:flex;gap:8px">
+            <span class="badge" style="background:#fee2e2;color:#991b1b" id="alerts-urgent-count">0 عاجل</span>
+            <span class="badge" style="background:#fef3c7;color:#92400e" id="alerts-warning-count">0 تحذير</span>
+            <span class="badge" style="background:#dbeafe;color:#1e40af" id="alerts-info-count">0 إشعار</span>
+          </div>
+        </div>
         <div id="alerts-container" style="margin-top:12px;display:none">
           <div class="muted">جاري تحميل التنبيهات...</div>
         </div>
@@ -461,6 +538,10 @@ function attachTabs(){
       if(id === 'procedures-tab') {
         loadAlerts();
         populateProceduresClubSelect();
+      }
+      if(id === 'clubs-info-tab') {
+        syncClubInfoSelect();
+        renderClubsInfoTable_subpage();
       }
     });
   });
@@ -658,11 +739,11 @@ async function saveClubsToStorage(){
 // تحميل الأندية
 async function loadClubsFromStorage(){
   if(!USE_SUPABASE){
-    const s = localStorage.setItem('clubs');
+    const s = localStorage.getItem('dropdownOptions');
     if(s){
       try{ clubsData = JSON.parse(s).map(normalizeClub); } catch(e){ clubsData = []; }
     } else clubsData = [];
-    return;
+    return clubsData;
   }
   
   // تحميل من Supabase
@@ -1864,9 +1945,43 @@ async function loadAlerts() {
   try {
     const alerts = [];
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
-    // حساب التنبيهات لكل نادي
+    // حساب التنبيهات من قائمة الأندية (الأولوية الأولى)
+    for (const clubInfo of clubsInfoData) {
+      if (!clubInfo.last_election_date) continue;
+      
+      // حساب تاريخ الانتهاء (آخر انتخابات + 3 سنوات)
+      const lastElection = parseDate(clubInfo.last_election_date);
+      if (!lastElection) continue;
+      
+      const endDate = new Date(lastElection);
+      endDate.setFullYear(endDate.getFullYear() + 3);
+      
+      // حساب الأيام المتبقية
+      const diffTime = endDate - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      // إذا كان ≤ 70 يوم، أضف تنبيه
+      if (diffDays <= 70) {
+        alerts.push({
+          clubName: clubInfo.club_name,
+          presidentName: clubInfo.president_name || '-',
+          phoneNumber: clubInfo.phone_number || '-',
+          daysLeft: diffDays,
+          endDate: formatDate(endDate),
+          lastElectionDate: clubInfo.last_election_date,
+          source: 'clubs_info'
+        });
+      }
+    }
+    
+    // إضافة تنبيهات من الصفحة الرئيسية للأندية غير المسجلة في قائمة الأندية
     for (const club of clubsData) {
+      // تحقق إذا كان النادي موجود في قائمة الأندية
+      const existsInClubsInfo = clubsInfoData.some(c => c.club_name === club.name);
+      if (existsInClubsInfo) continue;
+      
       if (!club.election1) continue;
       
       // حساب تاريخ الانتهاء (آخر انتخابات + 3 سنوات)
@@ -1881,11 +1996,15 @@ async function loadAlerts() {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
       // إذا كان ≤ 70 يوم، أضف تنبيه
-      if (diffDays <= 70 && diffDays > 0) {
+      if (diffDays <= 70) {
         alerts.push({
           clubName: club.name,
+          presidentName: '-',
+          phoneNumber: '-',
           daysLeft: diffDays,
-          endDate: formatDate(endDate)
+          endDate: formatDate(endDate),
+          lastElectionDate: club.election1,
+          source: 'main_page'
         });
       }
     }
@@ -1893,18 +2012,76 @@ async function loadAlerts() {
     // ترتيب حسب الأيام المتبقية (الأقرب أولاً)
     alerts.sort((a, b) => a.daysLeft - b.daysLeft);
     
+    // حساب الإحصائيات
+    let urgentCount = 0;
+    let warningCount = 0;
+    let infoCount = 0;
+    
+    alerts.forEach(alert => {
+      if (alert.daysLeft < 0 || alert.daysLeft <= 30) {
+        urgentCount++;
+      } else if (alert.daysLeft <= 50) {
+        warningCount++;
+      } else if (alert.daysLeft <= 70) {
+        infoCount++;
+      }
+    });
+    
+    // تحديث الإحصائيات
+    const urgentBadge = document.getElementById('alerts-urgent-count');
+    const warningBadge = document.getElementById('alerts-warning-count');
+    const infoBadge = document.getElementById('alerts-info-count');
+    
+    if (urgentBadge) urgentBadge.textContent = `${urgentCount} عاجل`;
+    if (warningBadge) warningBadge.textContent = `${warningCount} تحذير`;
+    if (infoBadge) infoBadge.textContent = `${infoCount} إشعار`;
+    
     // عرض التنبيهات
     if (alerts.length === 0) {
       container.innerHTML = '<div style="color:var(--success);font-weight:600">✅ لا توجد تنبيهات حالياً</div>';
     } else {
       let html = '<div style="display:flex;flex-direction:column;gap:8px">';
       alerts.forEach(alert => {
-        const urgency = alert.daysLeft <= 30 ? 'danger' : alert.daysLeft <= 50 ? 'warning' : 'info';
-        const icon = alert.daysLeft <= 30 ? '🔴' : '⚠️';
+        let urgency, icon, bgColor;
+        
+        if (alert.daysLeft < 0) {
+          urgency = 'danger';
+          icon = '⛔';
+          bgColor = '#fee2e2';
+        } else if (alert.daysLeft <= 30) {
+          urgency = 'danger';
+          icon = '🔴';
+          bgColor = '#fef2f2';
+        } else if (alert.daysLeft <= 50) {
+          urgency = 'warning';
+          icon = '⚠️';
+          bgColor = '#fef3c7';
+        } else {
+          urgency = 'info';
+          icon = '📢';
+          bgColor = '#dbeafe';
+        }
+        
+        const daysText = alert.daysLeft < 0 ? `انتهت منذ ${Math.abs(alert.daysLeft)} يوم` : `${alert.daysLeft} يوم متبقي`;
+        
         html += `
-          <div style="background:#fff;padding:12px;border-radius:8px;border-right:4px solid var(--${urgency});display:flex;justify-content:space-between;align-items:center">
-            <span style="font-weight:600">${icon} ${escapeHtml(alert.clubName)}</span>
-            <span style="color:var(--${urgency});font-weight:600">${alert.daysLeft} يوم متبقي</span>
+          <div style="background:${bgColor};padding:14px;border-radius:8px;border-right:4px solid var(--${urgency})">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:16px;margin-bottom:4px">${icon} ${escapeHtml(alert.clubName)}</div>
+                ${alert.source === 'clubs_info' ? `
+                  <div style="font-size:13px;color:var(--muted);margin-bottom:2px">👤 الرئيس: ${escapeHtml(alert.presidentName)}</div>
+                  ${alert.phoneNumber !== '-' ? `<div style="font-size:13px;color:var(--muted)">📞 ${escapeHtml(alert.phoneNumber)}</div>` : ''}
+                ` : ''}
+              </div>
+              <div style="text-align:left">
+                <div style="color:var(--${urgency});font-weight:700;font-size:15px">${daysText}</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:2px">📅 ${alert.endDate}</div>
+              </div>
+            </div>
+            <div style="font-size:12px;color:var(--muted);border-top:1px solid #e5e7eb;padding-top:6px;margin-top:6px">
+              آخر انتخابات: ${alert.lastElectionDate}
+            </div>
           </div>
         `;
       });
@@ -2122,6 +2299,552 @@ async function saveProcedure(procedure) {
     console.error('❌ خطأ في حفظ الإجراء:', e);
     alert('حدث خطأ في حفظ الإجراء');
   }
+}
+
+/* ================= قائمة الأندية الرياضية ================= */
+
+// بيانات قائمة الأندية
+let clubsInfoData = [];
+let clubsInfoFiltered = [];
+
+// تحميل بيانات قائمة الأندية من Supabase
+async function loadClubsInfo() {
+  try {
+    if (supabaseClient) {
+      const { data, error } = await supabaseClient
+        .from('clubs_info')
+        .select('*')
+        .order('club_name', { ascending: true });
+      
+      if (error) throw error;
+      
+      clubsInfoData = data || [];
+      console.log(`✅ تم تحميل ${clubsInfoData.length} نادي من قائمة الأندية`);
+    } else {
+      // localStorage fallback
+      const stored = localStorage.getItem('clubsInfo');
+      clubsInfoData = stored ? JSON.parse(stored) : [];
+    }
+    
+    clubsInfoFiltered = [...clubsInfoData];
+    renderClubsInfoTable();
+    populateClubInfoSelect();
+  } catch (e) {
+    console.error('❌ خطأ في تحميل قائمة الأندية:', e);
+    clubsInfoData = [];
+    clubsInfoFiltered = [];
+  }
+}
+
+// حفظ بيانات قائمة الأندية في Supabase
+async function saveClubsInfo() {
+  try {
+    if (supabaseClient) {
+      // حذف جميع السجلات القديمة
+      await supabaseClient.from('clubs_info').delete().neq('id', 0);
+      
+      // إضافة السجلات الجديدة
+      if (clubsInfoData.length > 0) {
+        const { error } = await supabaseClient
+          .from('clubs_info')
+          .insert(clubsInfoData.map(c => ({
+            club_name: c.club_name,
+            president_name: c.president_name,
+            phone_number: c.phone_number || '',
+            last_election_date: c.last_election_date
+          })));
+        
+        if (error) throw error;
+      }
+      
+      console.log('✅ تم حفظ قائمة الأندية في Supabase');
+    } else {
+      // localStorage fallback
+      localStorage.setItem('clubsInfo', JSON.stringify(clubsInfoData));
+    }
+  } catch (e) {
+    console.error('❌ خطأ في حفظ قائمة الأندية:', e);
+  }
+}
+
+// ملء القائمة المنسدلة لاختيار النادي
+function populateClubInfoSelect() {
+  const select = document.getElementById('clubInfoSelect');
+  if (!select) return;
+  
+  select.innerHTML = '<option value="">-- اختر النادي --</option>';
+  
+  // استخدام الأندية من الصفحة الرئيسية
+  clubsData.forEach(club => {
+    const option = document.createElement('option');
+    option.value = club.name;
+    option.textContent = club.name;
+    select.appendChild(option);
+  });
+}
+
+// تحميل بيانات النادي للتعديل
+function loadClubInfoForEdit() {
+  const select = document.getElementById('clubInfoSelect');
+  const clubName = select.value;
+  
+  if (!clubName) {
+    clearClubInfoForm();
+    return;
+  }
+  
+  // البحث عن النادي في البيانات
+  const clubInfo = clubsInfoData.find(c => c.club_name === clubName);
+  
+  document.getElementById('clubInfoName').value = clubName;
+  
+  if (clubInfo) {
+    document.getElementById('presidentNameInfo').value = clubInfo.president_name || '';
+    document.getElementById('phoneNumber').value = clubInfo.phone_number || '';
+    document.getElementById('lastElectionDate').value = clubInfo.last_election_date || '';
+  } else {
+    document.getElementById('presidentNameInfo').value = '';
+    document.getElementById('phoneNumber').value = '';
+    document.getElementById('lastElectionDate').value = '';
+  }
+}
+
+// حفظ بيانات النادي
+async function saveClubInfo() {
+  const clubName = document.getElementById('clubInfoName').value.trim();
+  const presidentName = document.getElementById('presidentNameInfo').value.trim();
+  const phoneNumber = document.getElementById('phoneNumber').value.trim();
+  const lastElectionDate = document.getElementById('lastElectionDate').value.trim();
+  
+  if (!clubName) {
+    alert('⚠️ يرجى اختيار النادي أولاً');
+    return;
+  }
+  
+  if (!presidentName) {
+    alert('⚠️ يرجى إدخال اسم رئيس النادي');
+    return;
+  }
+  
+  if (!lastElectionDate) {
+    alert('⚠️ يرجى إدخال تاريخ آخر انتخابات');
+    return;
+  }
+  
+  // التحقق من صحة التاريخ
+  if (!isValidDate(lastElectionDate)) {
+    alert('⚠️ تاريخ غير صحيح! استخدم الصيغة: يوم/شهر/سنة (مثال: 15/03/2022)');
+    return;
+  }
+  
+  try {
+    // البحث عن النادي
+    const existingIndex = clubsInfoData.findIndex(c => c.club_name === clubName);
+    
+    const clubInfo = {
+      club_name: clubName,
+      president_name: presidentName,
+      phone_number: phoneNumber,
+      last_election_date: lastElectionDate
+    };
+    
+    if (existingIndex >= 0) {
+      // تحديث
+      clubsInfoData[existingIndex] = clubInfo;
+    } else {
+      // إضافة جديد
+      clubsInfoData.push(clubInfo);
+    }
+    
+    await saveClubsInfo();
+    await loadClubsInfo();
+    
+    alert('✅ تم حفظ بيانات النادي بنجاح!');
+    clearClubInfoForm();
+  } catch (e) {
+    console.error('❌ خطأ في حفظ بيانات النادي:', e);
+    alert('حدث خطأ في حفظ البيانات');
+  }
+}
+
+// مسح الحقول
+function clearClubInfoForm() {
+  document.getElementById('clubInfoSelect').value = '';
+  document.getElementById('clubInfoName').value = '';
+  document.getElementById('presidentNameInfo').value = '';
+  document.getElementById('phoneNumber').value = '';
+  document.getElementById('lastElectionDate').value = '';
+}
+
+// حذف بيانات نادي
+async function deleteClubInfo(clubName) {
+  if (!confirm(`هل أنت متأكد من حذف بيانات "${clubName}"؟`)) {
+    return;
+  }
+  
+  try {
+    clubsInfoData = clubsInfoData.filter(c => c.club_name !== clubName);
+    await saveClubsInfo();
+    await loadClubsInfo();
+    alert('✅ تم حذف البيانات بنجاح');
+  } catch (e) {
+    console.error('❌ خطأ في حذف البيانات:', e);
+    alert('حدث خطأ في حذف البيانات');
+  }
+}
+
+// البحث في قائمة الأندية
+function searchClubsInfo() {
+  const searchTerm = document.getElementById('clubsInfoSearch').value.toLowerCase().trim();
+  
+  if (!searchTerm) {
+    clubsInfoFiltered = [...clubsInfoData];
+  } else {
+    clubsInfoFiltered = clubsInfoData.filter(club => {
+      const clubName = club.club_name.toLowerCase();
+      const presidentName = club.president_name.toLowerCase();
+      return clubName.includes(searchTerm) || presidentName.includes(searchTerm);
+    });
+  }
+  
+  renderClubsInfoTable();
+}
+
+// حساب تاريخ الانتهاء (3 سنوات من آخر انتخابات)
+function calculateEndDate(lastElectionDate) {
+  const parts = lastElectionDate.split('/');
+  if (parts.length !== 3) return null;
+  
+  const day = parseInt(parts[0]);
+  const month = parseInt(parts[1]);
+  const year = parseInt(parts[2]);
+  
+  // إضافة 3 سنوات
+  const endYear = year + 3;
+  
+  return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${endYear}`;
+}
+
+// حساب الأيام المتبقية
+function calculateDaysRemaining(endDate) {
+  if (!endDate) return null;
+  
+  const parts = endDate.split('/');
+  if (parts.length !== 3) return null;
+  
+  const day = parseInt(parts[0]);
+  const month = parseInt(parts[1]) - 1; // JavaScript months are 0-indexed
+  const year = parseInt(parts[2]);
+  
+  const endDateObj = new Date(year, month, day);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const diffTime = endDateObj - today;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
+}
+
+// عرض جدول قائمة الأندية
+function renderClubsInfoTable() {
+  const tbody = document.querySelector('#clubsInfoTable tbody');
+  const countBadge = document.getElementById('clubsInfoCount');
+  
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  
+  if (clubsInfoFiltered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af">لا توجد بيانات</td></tr>';
+    if (countBadge) countBadge.textContent = '0 نادي';
+    return;
+  }
+  
+  clubsInfoFiltered.forEach(club => {
+    const endDate = calculateEndDate(club.last_election_date);
+    const daysRemaining = calculateDaysRemaining(endDate);
+    
+    let daysDisplay = '-';
+    let statusDisplay = '-';
+    let statusBadgeStyle = '';
+    
+    if (daysRemaining !== null) {
+      if (daysRemaining < 0) {
+        daysDisplay = `<span style="color:#991b1b;font-weight:700">${Math.abs(daysRemaining)} يوم</span>`;
+        statusDisplay = `<span style="background:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:999px;font-weight:700;font-size:12px">⛔ منتهية</span>`;
+      } else if (daysRemaining <= 30) {
+        daysDisplay = `<span style="color:#dc2626;font-weight:700">${daysRemaining} يوم</span>`;
+        statusDisplay = `<span style="background:#fef2f2;color:#dc2626;padding:4px 10px;border-radius:999px;font-weight:700;font-size:12px">🔴 عاجل</span>`;
+      } else if (daysRemaining <= 50) {
+        daysDisplay = `<span style="color:#f59e0b;font-weight:700">${daysRemaining} يوم</span>`;
+        statusDisplay = `<span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:999px;font-weight:700;font-size:12px">⚠️ تحذير</span>`;
+      } else if (daysRemaining <= 70) {
+        daysDisplay = `<span style="color:#3b82f6;font-weight:700">${daysRemaining} يوم</span>`;
+        statusDisplay = `<span style="background:#dbeafe;color:#1e40af;padding:4px 10px;border-radius:999px;font-weight:700;font-size:12px">📢 إشعار</span>`;
+      } else {
+        daysDisplay = `<span style="color:#059669;font-weight:600">${daysRemaining} يوم</span>`;
+        statusDisplay = `<span style="background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:999px;font-weight:700;font-size:12px">✅ جيد</span>`;
+      }
+    }
+    
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-weight:600">${escapeHtml(club.club_name)}</td>
+      <td>${escapeHtml(club.president_name)}</td>
+      <td style="direction:ltr">${club.phone_number ? escapeHtml(club.phone_number) : '-'}</td>
+      <td>${escapeHtml(club.last_election_date)}</td>
+      <td style="font-weight:600">${endDate || '-'}</td>
+      <td>${daysDisplay}</td>
+      <td>${statusDisplay}</td>
+      <td>
+        <button class="btn-icon" onclick="goToProcedures('${escapeHtml(club.club_name)}')" title="الإجراءات الانتخابية">📋</button>
+        <button class="btn-icon" onclick="editClubInfo('${escapeHtml(club.club_name)}')" title="تعديل">✏️</button>
+        <button class="btn-icon danger" onclick="deleteClubInfo('${escapeHtml(club.club_name)}')" title="حذف">🗑️</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  if (countBadge) {
+    countBadge.textContent = `${clubsInfoFiltered.length} نادي`;
+  }
+}
+
+// تعديل بيانات نادي
+function editClubInfo(clubName) {
+  // التأكد من أن الصفحة الفرعية مفتوحة
+  const subpage = document.getElementById('clubs-info-subpage');
+  if (subpage && subpage.style.display === 'none') {
+    showClubsInfoPage();
+  }
+  
+  const select = document.getElementById('clubInfoSelect');
+  if (select) {
+    select.value = clubName;
+    loadClubInfoForEdit();
+    
+    // التمرير للأعلى
+    setTimeout(() => {
+      select.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
+  }
+}
+
+// الانتقال إلى صفحة الإجراءات الانتخابية لنادي معين
+function goToProcedures(clubName) {
+  // التبديل إلى تبويب الإجراءات
+  switchTab('procedures-tab');
+  
+  // تحميل إجراءات النادي
+  setTimeout(() => {
+    loadClubProcedures(clubName);
+    // التمرير إلى قسم الإجراءات
+    document.getElementById('procedures-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 300);
+}
+
+// مزامنة قائمة الأندية المنسدلة مع الأندية المدخلة في القائمة الرئيسية
+async function syncClubInfoSelect() {
+  const select = document.getElementById('clubInfoSelect_subpage');
+  if (!select) return;
+  
+  // الحصول على جميع الأندية من القائمة المنسدلة
+  const allClubs = await loadDropdownOptions();
+  
+  // التحقق من أن allClubs هي مصفوفة
+  if (!Array.isArray(allClubs)) {
+    console.error('allClubs is not an array:', allClubs);
+    return;
+  }
+  
+  // حفظ القيمة المحددة حالياً
+  const currentValue = select.value;
+  
+  // مسح القائمة وإعادة بنائها
+  select.innerHTML = '<option value="">-- اختر النادي --</option>';
+  
+  // إضافة جميع الأندية من القائمة المنسدلة
+  allClubs.forEach(clubName => {
+    const option = document.createElement('option');
+    option.value = clubName;
+    option.textContent = clubName;
+    select.appendChild(option);
+  });
+  
+  // استعادة القيمة المحددة إن وجدت
+  if (currentValue && allClubs.includes(currentValue)) {
+    select.value = currentValue;
+  }
+}
+// دوال الصفحة الفرعية لقائمة الأندية
+function renderClubsInfoTable_subpage() {
+  const table = document.getElementById('clubsInfoTable_subpage');
+  const tbody = table ? table.querySelector('tbody') : null;
+  const countBadge = document.getElementById('clubsInfoCount_subpage');
+  
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  
+  const clubsInfo = clubsInfoData || [];
+  const searchTerm = (document.getElementById('clubsInfoSearch_subpage')?.value || '').toLowerCase();
+  
+  const clubsInfoFiltered = clubsInfo.filter(club => {
+    return club.club_name.toLowerCase().includes(searchTerm) || 
+           (club.president_name && club.president_name.toLowerCase().includes(searchTerm));
+  });
+  
+  clubsInfoFiltered.forEach(club => {
+    const tr = document.createElement('tr');
+    
+    let daysRemaining = '-';
+    let statusDisplay = '-';
+    let endDate = '-';
+    
+    if (club.last_election_date) {
+      const lastDate = parseDate(club.last_election_date);
+      if (lastDate) {
+        const endDateObj = new Date(lastDate);
+        endDateObj.setFullYear(endDateObj.getFullYear() + 4);
+        endDate = formatDateDisplay(endDateObj);
+        
+        const today = new Date();
+        const diffTime = endDateObj - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 0) {
+          daysRemaining = `<span style="color:#dc2626;font-weight:600">منتهية</span>`;
+          statusDisplay = `<span class="badge" style="background:#fee2e2;color:#991b1b">منتهية</span>`;
+        } else if (diffDays <= 30) {
+          daysRemaining = `<span style="color:#dc2626;font-weight:600">${diffDays} يوم</span>`;
+          statusDisplay = `<span class="badge" style="background:#fee2e2;color:#991b1b">عاجل</span>`;
+        } else if (diffDays <= 90) {
+          daysRemaining = `<span style="color:#f59e0b;font-weight:600">${diffDays} يوم</span>`;
+          statusDisplay = `<span class="badge" style="background:#fef3c7;color:#92400e">تحذير</span>`;
+        } else {
+          daysRemaining = `<span style="color:#059669">${diffDays} يوم</span>`;
+          statusDisplay = `<span class="badge" style="background:#d1fae5;color:#065f46">طبيعي</span>`;
+        }
+      }
+    }
+    
+    tr.innerHTML = `
+      <td style="font-weight:600">${escapeHtml(club.club_name)}</td>
+      <td>${escapeHtml(club.president_name)}</td>
+      <td style="direction:ltr">${club.phone_number ? escapeHtml(club.phone_number) : '-'}</td>
+      <td>${escapeHtml(club.last_election_date)}</td>
+      <td style="font-weight:600">${endDate || '-'}</td>
+      <td>${daysRemaining}</td>
+      <td>${statusDisplay}</td>
+      <td>
+        <button class="btn-icon" onclick="goToProcedures('${escapeHtml(club.club_name)}')" title="الإجراءات الانتخابية">📋</button>
+        <button class="btn-icon" onclick="editClubInfo_subpage('${escapeHtml(club.club_name)}')" title="تعديل">✏️</button>
+        <button class="btn-icon danger" onclick="deleteClubInfo_subpage('${escapeHtml(club.club_name)}')" title="حذف">🗑️</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  if (countBadge) {
+    countBadge.textContent = `${clubsInfoFiltered.length} نادي`;
+  }
+}
+
+function searchClubsInfo_subpage() {
+  renderClubsInfoTable_subpage();
+}
+
+function loadClubInfoForEdit_subpage() {
+  const select = document.getElementById('clubInfoSelect_subpage');
+  const clubName = select?.value;
+  
+  if (!clubName) {
+    clearClubInfoForm_subpage();
+    return;
+  }
+  
+  const club = clubsInfoData.find(c => c.club_name === clubName);
+  
+  if (club) {
+    document.getElementById('clubInfoName_subpage').value = club.club_name;
+    document.getElementById('presidentNameInfo_subpage').value = club.president_name || '';
+    document.getElementById('phoneNumber_subpage').value = club.phone_number || '';
+    document.getElementById('lastElectionDate_subpage').value = club.last_election_date || '';
+  }
+}
+
+async function saveClubInfo_subpage() {
+  const clubName = document.getElementById('clubInfoSelect_subpage')?.value;
+  const presidentName = document.getElementById('presidentNameInfo_subpage')?.value.trim();
+  const phoneNumber = document.getElementById('phoneNumber_subpage')?.value.trim();
+  const lastElectionDate = document.getElementById('lastElectionDate_subpage')?.value.trim();
+  
+  if (!clubName) {
+    alert('⚠️ يرجى اختيار نادي من القائمة');
+    return;
+  }
+  
+  if (!presidentName) {
+    alert('⚠️ يرجى إدخال اسم رئيس النادي');
+    return;
+  }
+  
+  if (phoneNumber && !/^07\d{8}$/.test(phoneNumber)) {
+    alert('⚠️ رقم الهاتف يجب أن يبدأ بـ 07 ويتكون من 10 أرقام');
+    return;
+  }
+  
+  if (lastElectionDate && !parseDate(lastElectionDate)) {
+    alert('⚠️ تاريخ آخر انتخابات غير صحيح. يرجى استخدام صيغة يوم/شهر/سنة');
+    return;
+  }
+  
+  const existingIndex = clubsInfoData.findIndex(c => c.club_name === clubName);
+  
+  const clubInfo = {
+    club_name: clubName,
+    president_name: presidentName,
+    phone_number: phoneNumber,
+    last_election_date: lastElectionDate
+  };
+  
+  if (existingIndex >= 0) {
+    clubsInfoData[existingIndex] = clubInfo;
+  } else {
+    clubsInfoData.push(clubInfo);
+  }
+  
+  await saveClubsInfoToStorage();
+  renderClubsInfoTable_subpage();
+  clearClubInfoForm_subpage();
+  alert('✅ تم حفظ بيانات النادي بنجاح');
+}
+
+function clearClubInfoForm_subpage() {
+  document.getElementById('clubInfoSelect_subpage').value = '';
+  document.getElementById('clubInfoName_subpage').value = '';
+  document.getElementById('presidentNameInfo_subpage').value = '';
+  document.getElementById('phoneNumber_subpage').value = '';
+  document.getElementById('lastElectionDate_subpage').value = '';
+}
+
+function editClubInfo_subpage(clubName) {
+  const select = document.getElementById('clubInfoSelect_subpage');
+  select.value = clubName;
+  loadClubInfoForEdit_subpage();
+  document.getElementById('clubInfoSelect_subpage').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function deleteClubInfo_subpage(clubName) {
+  if (!confirm(`هل أنت متأكد من حذف بيانات نادي "${clubName}"؟`)) {
+    return;
+  }
+  
+  clubsInfoData = clubsInfoData.filter(c => c.club_name !== clubName);
+  await saveClubsInfoToStorage();
+  renderClubsInfoTable_subpage();
+  alert('✅ تم حذف بيانات النادي بنجاح');
 }
 
 /*  الوظائف و وحدة التحكم */
