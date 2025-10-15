@@ -217,6 +217,11 @@
           <!-- Add/Edit Club Info Form -->
           <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:16px">
             <h4 style="margin-top:0">إضافة/تعديل بيانات النادي</h4>
+            <div style="background:#eff6ff;border-right:4px solid #3b82f6;padding:12px;margin-bottom:12px;border-radius:6px">
+              <p style="margin:0;color:#1e40af;font-size:13px">
+                <strong>💡 ملاحظة:</strong> يتم حساب تاريخ انتهاء الدورة تلقائياً بإضافة <strong>3 سنوات</strong> إلى تاريخ آخر انتخابات. استخدم زر "📥 استيراد جميع الأندية" لإضافة جميع الأندية من القائمة الرئيسية دفعة واحدة.
+              </p>
+            </div>
             <div class="controls">
               <select id="clubInfoSelect_subpage" aria-label="اختر النادي" onchange="loadClubInfoForEdit_subpage()">
                 <option value="">-- اختر النادي --</option>
@@ -232,6 +237,7 @@
               
               <button class="btn" onclick="saveClubInfo_subpage()">💾 حفظ البيانات</button>
               <button class="btn secondary" onclick="clearClubInfoForm_subpage()">🔄 مسح الحقول</button>
+              <button class="btn" onclick="autoImportAllClubs()" style="background:#059669">📥 استيراد جميع الأندية</button>
             </div>
           </div>
 
@@ -263,7 +269,7 @@
       <!-- Reconciliation Dates Section - Input Only -->
       <div class="panel">
         <h3>📅 تواريخ توفيق الأنظمة الداخلية للأندية</h3>
-        <p class="muted">تاريخ توفيق النظام الداخلي  يحدد بداية احتساب الدورات أي دورة بدأت قبل هذا التاريخ لا تحسب ضمن الثلاث دورات.</p>
+        <p class="muted">تاريخ توفيق النظام الداخلي هو التاريخ المرجعي الذي يُحدد بداية احتساب الدورات. أي دورة بدأت قبل هذا التاريخ لا تُحسب ضمن الثلاث دورات.</p>
         <div class="controls">
           <select id="clubSelectReconciliation">
             <option value="">-- اختر النادي --</option>
@@ -521,7 +527,7 @@ function toggleAlerts() {
 /* ================= علامات التبويب ================= */
 function attachTabs(){
   document.querySelectorAll('.tab').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
+    btn.addEventListener('click', async ()=>{
       document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c=>c.style.display='none');
       btn.classList.add('active');
@@ -540,9 +546,10 @@ function attachTabs(){
         populateProceduresClubSelect();
       }
       if(id === 'clubs-info-tab') {
-        await loadClubsInfoFromStorage();
-        syncClubInfoSelect();
-        renderClubsInfoTable_subpage();
+        loadClubsInfoFromStorage().then(() => {
+          syncClubInfoSelect();
+          renderClubsInfoTable_subpage();
+        });
       }
     });
   });
@@ -2850,7 +2857,7 @@ async function deleteClubInfo_subpage(clubName) {
 
 // حفظ بيانات قائمة الأندية إلى Supabase
 async function saveClubsInfoToStorage() {
-  if (useSupabase && supabase) {
+  if (USE_SUPABASE && supabase) {
     try {
       // حذف جميع البيانات القديمة
       await supabase.from('clubs_info').delete().neq('id', 0);
@@ -2874,7 +2881,7 @@ async function saveClubsInfoToStorage() {
 
 // تحميل بيانات قائمة الأندية من Supabase
 async function loadClubsInfoFromStorage() {
-  if (useSupabase && supabase) {
+  if (USE_SUPABASE && supabase) {
     try {
       const { data, error } = await supabase
         .from('clubs_info')
@@ -2893,6 +2900,52 @@ async function loadClubsInfoFromStorage() {
     const stored = localStorage.getItem('clubsInfo');
     clubsInfoData = stored ? JSON.parse(stored) : [];
     console.log(`✅ تم تحميل ${clubsInfoData.length} نادي من قائمة الأندية محلياً`);
+  }
+}
+
+// دالة الاستيراد التلقائي لجميع الأندية
+async function autoImportAllClubs() {
+  if (!confirm('هل تريد استيراد جميع الأندية من القائمة المنسدلة؟\n\nملاحظة: سيتم إضافة الأندية التي ليست موجودة في القائمة فقط.')) {
+    return;
+  }
+  
+  try {
+    // الحصول على جميع الأندية من القائمة المنسدلة
+    const allClubs = await loadDropdownOptions();
+    
+    if (!Array.isArray(allClubs) || allClubs.length === 0) {
+      alert('⚠️ لا توجد أندية في القائمة المنسدلة');
+      return;
+    }
+    
+    let importedCount = 0;
+    
+    // إضافة الأندية التي ليست موجودة
+    allClubs.forEach(clubName => {
+      const exists = clubsInfoData.some(c => c.club_name === clubName);
+      
+      if (!exists) {
+        clubsInfoData.push({
+          club_name: clubName,
+          president_name: '',
+          phone_number: '',
+          last_election_date: ''
+        });
+        importedCount++;
+      }
+    });
+    
+    if (importedCount > 0) {
+      await saveClubsInfoToStorage();
+      renderClubsInfoTable_subpage();
+      await syncClubInfoSelect();
+      alert(`✅ تم استيراد ${importedCount} نادي بنجاح!\n\nيمكنك الآن إضافة بيانات الرؤساء والهواتف والتواريخ.`);
+    } else {
+      alert('ℹ️ جميع الأندية موجودة بالفعل في القائمة');
+    }
+  } catch (error) {
+    console.error('❌ خطأ في الاستيراد التلقائي:', error);
+    alert('❌ حدث خطأ أثناء الاستيراد');
   }
 }
 
