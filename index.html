@@ -263,7 +263,7 @@
       <!-- Reconciliation Dates Section - Input Only -->
       <div class="panel">
         <h3>📅 تواريخ توفيق الأنظمة الداخلية للأندية</h3>
-        <p class="muted">تاريخ توفيق النظام الداخلي هو التاريخ المرجعي الذي يُحدد بداية احتساب الدورات. أي دورة بدأت قبل هذا التاريخ لا تُحسب ضمن الثلاث دورات.</p>
+        <p class="muted">تاريخ توفيق النظام الداخلي  يحدد بداية احتساب الدورات أي دورة بدأت قبل هذا التاريخ لا تحسب ضمن الثلاث دورات.</p>
         <div class="controls">
           <select id="clubSelectReconciliation">
             <option value="">-- اختر النادي --</option>
@@ -540,6 +540,7 @@ function attachTabs(){
         populateProceduresClubSelect();
       }
       if(id === 'clubs-info-tab') {
+        await loadClubsInfoFromStorage();
         syncClubInfoSelect();
         renderClubsInfoTable_subpage();
       }
@@ -2706,7 +2707,7 @@ function renderClubsInfoTable_subpage() {
       const lastDate = parseDate(club.last_election_date);
       if (lastDate) {
         const endDateObj = new Date(lastDate);
-        endDateObj.setFullYear(endDateObj.getFullYear() + 4);
+        endDateObj.setFullYear(endDateObj.getFullYear() + 3);
         endDate = formatDateDisplay(endDateObj);
         
         const today = new Date();
@@ -2845,6 +2846,54 @@ async function deleteClubInfo_subpage(clubName) {
   await saveClubsInfoToStorage();
   renderClubsInfoTable_subpage();
   alert('✅ تم حذف بيانات النادي بنجاح');
+}
+
+// حفظ بيانات قائمة الأندية إلى Supabase
+async function saveClubsInfoToStorage() {
+  if (useSupabase && supabase) {
+    try {
+      // حذف جميع البيانات القديمة
+      await supabase.from('clubs_info').delete().neq('id', 0);
+      
+      // إدراج البيانات الجديدة
+      if (clubsInfoData.length > 0) {
+        const { error } = await supabase.from('clubs_info').insert(clubsInfoData);
+        if (error) throw error;
+      }
+      
+      console.log('✅ تم حفظ بيانات قائمة الأندية إلى Supabase');
+    } catch (error) {
+      console.error('❌ خطأ في حفظ بيانات قائمة الأندية:', error);
+      alert('❌ حدث خطأ أثناء حفظ البيانات. يرجى المحاولة مرة أخرى.');
+    }
+  } else {
+    localStorage.setItem('clubsInfo', JSON.stringify(clubsInfoData));
+    console.log('✅ تم حفظ بيانات قائمة الأندية محلياً');
+  }
+}
+
+// تحميل بيانات قائمة الأندية من Supabase
+async function loadClubsInfoFromStorage() {
+  if (useSupabase && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('clubs_info')
+        .select('*')
+        .order('club_name', { ascending: true });
+      
+      if (error) throw error;
+      
+      clubsInfoData = data || [];
+      console.log(`✅ تم تحميل ${clubsInfoData.length} نادي من قائمة الأندية من Supabase`);
+    } catch (error) {
+      console.error('❌ خطأ في تحميل بيانات قائمة الأندية:', error);
+      clubsInfoData = [];
+    }
+  } else {
+    const stored = localStorage.getItem('clubsInfo');
+    clubsInfoData = stored ? JSON.parse(stored) : [];
+    console.log(`✅ تم تحميل ${clubsInfoData.length} نادي من قائمة الأندية محلياً`);
+  }
 }
 
 /*  الوظائف و وحدة التحكم */
